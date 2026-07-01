@@ -1,0 +1,4 @@
+# Tell GitHub Linguist to ignore HTML templates in language statistics
+library/templates/**/*.html linguist-detectable=false
+library/templates/*.html linguist-detectable=false
+*.html linguist-detectable=false
