@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - SmartLibrary{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="card border-0 rounded-4 shadow-sm p-4 mx-auto" style="max-width: 700px;">
+        <div class="text-center mb-4">
+            <!-- Profile picture -->
+            <div class="position-relative d-inline-block">
+                <div class="rounded-circle border bg-light shadow-sm overflow-hidden d-flex align-items-center justify-content-center mx-auto" style="width: 120px; height: 120px;">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="w-100 h-100" style="object-fit: cover;">
+                    {% else %}
+                        <i class="bi bi-person text-muted" style="font-size: 4rem;"></i>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <h3 class="fw-bold text-dark mt-3 mb-1">{{ user.get_full_name|default:user.username }}</h3>
+            <span class="badge bg-indigo-subtle text-indigo px-3 py-2 rounded-pill fw-semibold text-capitalize">{{ user.role }} Account</span>
+        </div>
+
+        <div class="border-top pt-4">
+            <h5 class="fw-bold text-dark mb-3">Account Details</h5>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Username</small>
+                    <span class="fw-semibold text-dark">{{ user.username }}</span>
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Email Address</small>
+                    <span class="fw-semibold text-dark">{{ user.email|default:"N/A" }}</span>
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Phone Number</small>
+                    <span class="fw-semibold text-dark">{{ user.phone|default:"N/A" }}</span>
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">System Role</small>
+                    <span class="fw-semibold text-dark text-capitalize">{{ user.role }}</span>
+                </div>
+            </div>
+
+            {% if student %}
+                <h5 class="fw-bold text-dark mb-3 border-top pt-4">Student Profile</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Roll Number</small>
+                        <span class="fw-semibold text-dark">{{ student.roll_number }}</span>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Department</small>
+                        <span class="fw-semibold text-dark">{{ student.department }}</span>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Max Borrow Limit</small>
+                        <span class="fw-semibold text-dark">{{ student.max_borrow_limit }} Books</span>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Membership Expiry Date</small>
+                        <span class="fw-semibold text-dark">{{ student.membership_expiry }}</span>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if faculty %}
+                <h5 class="fw-bold text-dark mb-3 border-top pt-4">Faculty Profile</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Employee ID</small>
+                        <span class="fw-semibold text-dark">{{ faculty.employee_id }}</span>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Department</small>
+                        <span class="fw-semibold text-dark">{{ faculty.department }}</span>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Max Borrow Limit</small>
+                        <span class="fw-semibold text-dark">{{ faculty.max_borrow_limit }} Books</span>
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted d-block">Research Interests</small>
+                        <p class="fw-semibold text-dark m-0 mt-1" style="font-size: 0.95rem;">{{ faculty.research_interest|default:"None listed" }}</p>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="d-flex flex-column flex-sm-row gap-2 border-top pt-4 mt-2">
+                <a href="{% url 'profile_edit' %}" class="btn btn-teal rounded-3 px-4"><i class="bi bi-pencil-square me-2"></i>Edit Details</a>
+                <a href="{% url 'password_change' %}" class="btn btn-outline-secondary rounded-3 px-4"><i class="bi bi-shield-lock-fill me-2"></i>Change Password</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,519 @@
+{% extends 'base.html' %}
+{% block title %}Diagnostic Center - AI Phone Diagnostics{% endblock %}
+{% block page_title %}Self-Diagnostic Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    .test-card {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background-color: var(--bg-secondary);
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: border-color 0.2s;
+    }
+    
+    .test-card.active {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 1px var(--color-primary);
+    }
+    
+    /* Touch Test Canvas Grid */
+    #touchGridContainer {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 2px;
+        max-width: 320px;
+        margin: 15px auto;
+        background-color: var(--border-color);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .grid-cell {
+        aspect-ratio: 1;
+        background-color: white;
+        cursor: pointer;
+        transition: background-color 0.1s;
+    }
+    
+    .grid-cell.painted {
+        background-color: var(--color-primary-light);
+        border: 1px solid var(--color-primary);
+    }
+    
+    /* Display Flash screen styles */
+    #displayFlashScreen {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="custom-card mb-4">
+            <h4 class="fw-bold mb-1">Interactive Diagnostic Suite</h4>
+            <p class="text-muted small mb-4">Select a device and execute interactive sensor, display, touch, and audio tests.</p>
+            
+            <form id="diagnosticsForm" method="POST" action="{% url 'diagnostics' %}">
+                {% csrf_token %}
+                <input type="hidden" name="device_id" value="{{ selected_device.id }}">
+                
+                <!-- Test Indicators (Hidden values sent to DB) -->
+                <input type="hidden" name="speaker_test" id="id_speaker_test" value="pass">
+                <input type="hidden" name="speaker_db" id="id_speaker_db" value="75.0">
+                <input type="hidden" name="mic_test" id="id_mic_test" value="pass">
+                <input type="hidden" name="mic_db" id="id_mic_db" value="62.0">
+                <input type="hidden" name="touch_test" id="id_touch_test" value="pass">
+                <input type="hidden" name="display_test" id="id_display_test" value="pass">
+                <input type="hidden" name="dead_pixels" id="id_dead_pixels" value="0">
+                <input type="hidden" name="connectivity_test" id="id_connectivity_test" value="pass">
+                <input type="hidden" name="network_test" id="id_network_test" value="pass">
+                <input type="hidden" name="camera_test" id="id_camera_test" value="pass">
+                
+                <input type="hidden" name="sensor_accel" id="id_sensor_accel" value="1">
+                <input type="hidden" name="sensor_gyro" id="id_sensor_gyro" value="1">
+                
+                <!-- TEST 1: Speaker Audio Tone Test -->
+                <div class="test-card" id="speakerCard">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-4 text-teal"><i class="bi bi-volume-up"></i></div>
+                            <div>
+                                <h6 class="fw-bold m-0">Speaker Audio Oscillator Test</h6>
+                                <small class="text-muted">Generates a reference 440Hz sound wave tone</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill" id="speakerStatus">Not Tested</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="btn btn-teal btn-sm px-3" onclick="runSpeakerTest()"><i class="bi bi-play-circle me-1"></i>Generate Tone</button>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-success" onclick="setTestOutcome('speaker', 'pass')">Hearable</button>
+                            <button type="button" class="btn btn-outline-danger" onclick="setTestOutcome('speaker', 'fail')">No Sound / Distorted</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TEST 2: Microphone Level Analyzer -->
+                <div class="test-card" id="micCard">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-4 text-teal"><i class="bi bi-mic"></i></div>
+                            <div>
+                                <h6 class="fw-bold m-0">Microphone Input Level Check</h6>
+                                <small class="text-muted">Captures environment audio to evaluate input dB</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill" id="micStatus">Not Tested</span>
+                    </div>
+                    <div class="mb-3">
+                        <div class="progress rounded-pill bg-light-input" style="height: 10px;">
+                            <div class="progress-bar progress-teal" role="progressbar" style="width: 0%" id="micProgressBar"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1 text-muted" style="font-size: 0.72rem;">
+                            <span>0 dB (Silence)</span>
+                            <span id="micDbLabel">Current: -- dB</span>
+                            <span>100 dB (Loud)</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <button type="button" class="btn btn-teal btn-sm px-3" onclick="runMicrophoneTest()"><i class="bi bi-record-circle me-1"></i>Capture Level</button>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-success" onclick="setTestOutcome('mic', 'pass')">Functional</button>
+                            <button type="button" class="btn btn-outline-danger" onclick="setTestOutcome('mic', 'fail')">Faulty</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TEST 3: Touch Screen Grid Painter -->
+                <div class="test-card" id="touchCard">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-4 text-teal"><i class="bi bi-hand-index-thumb"></i></div>
+                            <div>
+                                <h6 class="fw-bold m-0">Touch Screen Digitizer Grid Test</h6>
+                                <small class="text-muted">Hover or paint all squares below to verify touch responsiveness</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill" id="touchStatus">Not Tested</span>
+                    </div>
+                    
+                    <div id="touchGridContainer">
+                        <!-- Filled by JS -->
+                    </div>
+                    <div class="text-center mt-2">
+                        <span class="small text-muted" id="touchProgressLabel">Painted: 0%</span>
+                        <button type="button" class="btn btn-outline-secondary btn-sm ms-3" onclick="resetTouchGrid()">Reset Grid</button>
+                    </div>
+                </div>
+
+                <!-- TEST 4: Display Calibration Fitter -->
+                <div class="test-card" id="displayCard">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-4 text-teal"><i class="bi bi-display"></i></div>
+                            <div>
+                                <h6 class="fw-bold m-0">Display Panel color Calibration</h6>
+                                <small class="text-muted">Flashes color screens to identify dead pixel clusters</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill" id="displayStatus">Not Tested</span>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <button type="button" class="btn btn-teal btn-sm px-3" onclick="runDisplayFlash()"><i class="bi bi-fullscreen me-1"></i>Start Color Flash</button>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-success" onclick="setDisplayOutcome('pass', 0)">All Colors Fine</button>
+                            <button type="button" class="btn btn-outline-danger" onclick="setDisplayOutcome('fail', 3)">Dead Pixels Found</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TEST 5: Sensor orientation & Accelerator outputs -->
+                <div class="test-card" id="sensorCard">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-4 text-teal"><i class="bi bi-compass"></i></div>
+                            <div>
+                                <h6 class="fw-bold m-0">Sensor Hub Calibration</h6>
+                                <small class="text-muted">Inspect real-time orientation and accelerometer metrics</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-success rounded-pill" id="sensorStatus">Online</span>
+                    </div>
+                    <div class="row text-center mb-3">
+                        <div class="col-4 border-end">
+                            <div class="fw-bold small" id="sensorAlpha">0.0°</div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Yaw (Alpha)</small>
+                        </div>
+                        <div class="col-4 border-end">
+                            <div class="fw-bold small" id="sensorBeta">0.0°</div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Pitch (Beta)</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold small" id="sensorGamma">0.0°</div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Roll (Gamma)</small>
+                        </div>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-success active" id="sensorPassBtn" onclick="toggleSensorOutcome(true)">Pass</button>
+                        <button type="button" class="btn btn-outline-danger" id="sensorFailBtn" onclick="toggleSensorOutcome(false)">Fail</button>
+                    </div>
+                </div>
+
+                <!-- Submit Diagnostics -->
+                <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+                    <button type="submit" class="btn btn-teal btn-lg rounded-3"><i class="bi bi-file-earmark-check me-2"></i>Submit Diagnostics Sheet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Device Info Side Panel -->
+        <div class="custom-card mb-4">
+            <h5 class="fw-bold mb-3">Active Device Node</h5>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="brand-icon" style="width: 45px; height: 45px; font-size: 1.5rem;">
+                    <i class="bi bi-phone"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold m-0">{{ selected_device.brand }} {{ selected_device.model }}</h6>
+                    <small class="text-muted">{{ selected_device.name }}</small>
+                </div>
+            </div>
+            <div class="small border-top pt-3 text-muted">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>OS Version:</span>
+                    <span class="fw-semibold text-dark">Android {{ selected_device.android_version }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>RAM Configuration:</span>
+                    <span class="fw-semibold text-dark">{{ selected_device.ram_gb }} GB RAM</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Warranty Status:</span>
+                    <span class="fw-semibold text-success">{% if selected_device.warranty_status %}Active{% else %}Expired{% endif %}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructions Panel -->
+        <div class="custom-card">
+            <h5 class="fw-bold mb-3">Testing Instructions</h5>
+            <ol class="small text-muted ps-3 mb-0" style="line-height: 1.6;">
+                <li class="mb-2">Click <b>Generate Tone</b>. If you hear a clear audio beep, mark "Hearable".</li>
+                <li class="mb-2">Click <b>Capture Level</b> and make noise. The level bar will spike. If it responds, mark "Functional".</li>
+                <li class="mb-2">Hover or click/touch every grid square. The grid cells will turn green. Paint 100% of cells.</li>
+                <li class="mb-2">Click <b>Start Color Flash</b>. The screen will cycle full colors. Press anywhere to exit.</li>
+                <li>Submit the diagnostics sheet once all items are green or tested.</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<!-- Display Fullscreen Color Flasher Canvas -->
+<div id="displayFlashScreen" onclick="stopDisplayFlash()"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global web audio variables
+    let audioCtx = null;
+    let micStream = null;
+
+    // 1. Speaker Tone Test (Web Audio Sine Oscillator)
+    function runSpeakerTest() {
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime); // 440 Hz tone
+            
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.5); // Play for 1.5 seconds
+            
+            const badge = document.getElementById('speakerStatus');
+            badge.className = 'badge bg-warning text-dark rounded-pill';
+            badge.innerText = 'Beeping...';
+            
+            setTimeout(() => {
+                badge.innerText = 'Tone Played';
+            }, 1500);
+        } catch (e) {
+            console.error("Audio Tone failure: ", e);
+            alert("AudioContext is blocked or not supported on this browser.");
+        }
+    }
+    
+    function setTestOutcome(testName, result) {
+        document.getElementById(`id_${testName}_test`).value = result;
+        const badge = document.getElementById(`${testName}Status`);
+        if (result === 'pass') {
+            badge.className = 'badge bg-success rounded-pill';
+            badge.innerText = 'Passed';
+        } else {
+            badge.className = 'badge bg-danger rounded-pill';
+            badge.innerText = 'Failed';
+        }
+        document.getElementById(`${testName}Card`).classList.add('active');
+    }
+
+    // 2. Microphone capture test (Web Audio Analyzer)
+    function runMicrophoneTest() {
+        const badge = document.getElementById('micStatus');
+        badge.className = 'badge bg-warning text-dark rounded-pill';
+        badge.innerText = 'Listening...';
+        
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                micStream = stream;
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const source = audioCtx.createMediaStreamSource(stream);
+                const analyzer = audioCtx.createAnalyser();
+                analyzer.fftSize = 256;
+                source.connect(analyzer);
+                
+                const dataArray = new Uint8Array(analyzer.frequencyBinCount);
+                let durationCounter = 0;
+                
+                function checkVolume() {
+                    if (durationCounter > 60) { // Check for ~3 seconds
+                        micProgressBar.style.width = '0%';
+                        badge.innerText = 'Captured';
+                        stream.getTracks().forEach(track => track.stop());
+                        return;
+                    }
+                    analyzer.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < dataArray.length; i++) {
+                        sum += dataArray[i];
+                    }
+                    let avg = sum / dataArray.length;
+                    let pct = Math.min(100, (avg / 128) * 100);
+                    let decibel = Math.round((avg / 255) * 100);
+                    
+                    document.getElementById('micProgressBar').style.width = `${pct}%`;
+                    document.getElementById('micDbLabel').innerText = `Current: ${decibel} dB`;
+                    document.getElementById('id_mic_db').value = decibel;
+                    
+                    durationCounter++;
+                    requestAnimationFrame(checkVolume);
+                }
+                checkVolume();
+            })
+            .catch(err => {
+                console.error("Microphone capture blocked: ", err);
+                badge.className = 'badge bg-danger rounded-pill';
+                badge.innerText = 'Blocked';
+            });
+    }
+
+    // 3. Touch Screen Grid Painter
+    const totalCells = 64; // 8x8 grid
+    let paintedCount = 0;
+    
+    function buildTouchGrid() {
+        const container = document.getElementById('touchGridContainer');
+        container.innerHTML = '';
+        paintedCount = 0;
+        for (let i = 0; i < totalCells; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            
+            // support desktop hover and mobile drag
+            cell.addEventListener('mouseover', function() {
+                paintCell(cell);
+            });
+            cell.addEventListener('touchstart', function() {
+                paintCell(cell);
+            });
+            container.appendChild(cell);
+        }
+    }
+    
+    function paintCell(cell) {
+        if (!cell.classList.contains('painted')) {
+            cell.classList.add('painted');
+            paintedCount++;
+            let pct = Math.round((paintedCount / totalCells) * 100);
+            document.getElementById('touchProgressLabel').innerText = `Painted: ${pct}%`;
+            
+            if (paintedCount === totalCells) {
+                const badge = document.getElementById('touchStatus');
+                badge.className = 'badge bg-success rounded-pill';
+                badge.innerText = 'Passed';
+                document.getElementById('id_touch_test').value = 'pass';
+                document.getElementById('touchCard').classList.add('active');
+            }
+        }
+    }
+    
+    function resetTouchGrid() {
+        buildTouchGrid();
+        document.getElementById('touchProgressLabel').innerText = 'Painted: 0%';
+        document.getElementById('touchStatus').className = 'badge bg-secondary rounded-pill';
+        document.getElementById('touchStatus').innerText = 'Not Tested';
+        document.getElementById('id_touch_test').value = 'pass';
+    }
+
+    // 4. Display color flashing check
+    let flashInterval = null;
+    function runDisplayFlash() {
+        const screen = document.getElementById('displayFlashScreen');
+        screen.style.display = 'block';
+        
+        const colorsList = ['#ff0000', '#00ff00', '#0000ff', '#ffffff', '#000000'];
+        let colorIndex = 0;
+        
+        screen.style.backgroundColor = colorsList[colorIndex];
+        
+        flashInterval = setInterval(() => {
+            colorIndex = (colorIndex + 1) % colorsList.length;
+            screen.style.backgroundColor = colorsList[colorIndex];
+        }, 1200); // cycle colors every 1.2s
+    }
+    
+    function stopDisplayFlash() {
+        const screen = document.getElementById('displayFlashScreen');
+        screen.style.display = 'none';
+        clearInterval(flashInterval);
+        
+        const badge = document.getElementById('displayStatus');
+        badge.className = 'badge bg-warning text-dark rounded-pill';
+        badge.innerText = 'Cycled Colors';
+    }
+    
+    function setDisplayOutcome(result, deadPixelCount) {
+        document.getElementById('id_display_test').value = result;
+        document.getElementById('id_dead_pixels').value = deadPixelCount;
+        
+        const badge = document.getElementById('displayStatus');
+        if (result === 'pass') {
+            badge.className = 'badge bg-success rounded-pill';
+            badge.innerText = 'Passed';
+        } else {
+            badge.className = 'badge bg-danger rounded-pill';
+            badge.innerText = 'Failed';
+        }
+        document.getElementById('displayCard').classList.add('active');
+    }
+
+    // 5. Sensor calibration orientation updates
+    function setupSensors() {
+        // orientation mock simulator
+        let yaw = 0;
+        let pitch = 0;
+        let roll = 0;
+        
+        setInterval(() => {
+            yaw = (yaw + (Math.random() - 0.5) * 5) % 360;
+            pitch = (pitch + (Math.random() - 0.5) * 3) % 180;
+            roll = (roll + (Math.random() - 0.5) * 3) % 90;
+            
+            document.getElementById('sensorAlpha').innerText = `${yaw.toFixed(1)}°`;
+            document.getElementById('sensorBeta').innerText = `${pitch.toFixed(1)}°`;
+            document.getElementById('sensorGamma').innerText = `${roll.toFixed(1)}°`;
+        }, 300);
+        
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientation', function(e) {
+                if (e.alpha !== null) {
+                    document.getElementById('sensorAlpha').innerText = `${e.alpha.toFixed(1)}°`;
+                    document.getElementById('sensorBeta').innerText = `${e.beta.toFixed(1)}°`;
+                    document.getElementById('sensorGamma').innerText = `${e.gamma.toFixed(1)}°`;
+                }
+            });
+        }
+    }
+    
+    function toggleSensorOutcome(pass) {
+        const passBtn = document.getElementById('sensorPassBtn');
+        const failBtn = document.getElementById('sensorFailBtn');
+        const badge = document.getElementById('sensorStatus');
+        
+        if (pass) {
+            passBtn.classList.add('active');
+            failBtn.classList.remove('active');
+            badge.className = 'badge bg-success rounded-pill';
+            badge.innerText = 'Online';
+            document.getElementById('id_sensor_accel').value = '1';
+            document.getElementById('id_sensor_gyro').value = '1';
+        } else {
+            passBtn.classList.remove('active');
+            failBtn.classList.add('active');
+            badge.className = 'badge bg-danger rounded-pill';
+            badge.innerText = 'Faulty';
+            document.getElementById('id_sensor_accel').value = '0';
+            document.getElementById('id_sensor_gyro').value = '0';
+        }
+    }
+
+    // Initialize Touch grid and Sensor loops
+    document.addEventListener("DOMContentLoaded", function() {
+        buildTouchGrid();
+        setupSensors();
+    });
+</script>
+{% endblock %}

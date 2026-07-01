@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ book.title }} - SmartLibrary{% endblock %}
+{% block page_title %}Book Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Back to catalog button -->
+    <a href="{% url 'book_list' %}" class="btn btn-outline-primary rounded-3 mb-4"><i class="bi bi-arrow-left me-2"></i>Back to Catalogue</a>
+
+    <div class="row g-4 mb-5">
+        <!-- Left: Book Cover & QR Code -->
+        <div class="col-lg-4 col-xl-3">
+            <div class="glass-card p-4 text-center">
+                <!-- Cover Image -->
+                <div class="book-cover-container rounded-4 mb-3" style="height: 300px;">
+                    {% if book.cover_image %}
+                        <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="book-cover-image">
+                    {% else %}
+                        <div class="book-cover-gradient category-{{ book.category.slug }}">
+                            <i class="bi bi-bookmark-fill book-cover-ribbon"></i>
+                            <div class="book-cover-title" style="font-size: 1.25rem;">{{ book.title }}</div>
+                            <div class="book-cover-author">{{ book.author }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <h5 class="fw-bold text-white mt-2 mb-1">ISBN: {{ book.isbn }}</h5>
+                <p class="text-secondary small">Shelf Location: <strong>{% if copies %}{{ copies.first.shelf_location }}{% else %}N/A{% endif %}</strong></p>
+
+                <!-- Book Interaction Buttons -->
+                <div class="d-flex gap-2 justify-content-center mt-3 mb-4">
+                    <!-- Favorite Button -->
+                    <form action="{% url 'toggle_favorite' book.id %}" method="POST" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="btn {% if is_favorite %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-circle p-2" title="Toggle Favourite" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi {% if is_favorite %}bi-heart-fill{% else %}bi-heart{% endif %} fs-5"></i>
+                        </button>
+                    </form>
+                    <!-- Wishlist Button -->
+                    <form action="{% url 'toggle_wishlist' book.id %}" method="POST" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="btn {% if is_wishlist %}btn-warning text-white{% else %}btn-outline-warning{% endif %} rounded-circle p-2" title="Toggle Wishlist" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi {% if is_wishlist %}bi-bookmark-star-fill{% else %}bi-bookmark-star{% endif %} fs-5"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="border-top border-secondary border-opacity-25 pt-4">
+                    <h6 class="fw-bold text-white mb-2">Book QR Code</h6>
+                    {% if book.qr_code %}
+                        <img src="{{ book.qr_code.url }}" alt="QR Code" class="img-fluid rounded border border-secondary border-opacity-25 mb-2" style="max-width: 140px; background-color: white; padding: 4px;">
+                        <small class="text-secondary d-block" style="font-size: 0.75rem;">Scan this QR to view availability, details, and borrowing history.</small>
+                    {% else %}
+                        <span class="text-secondary small">QR code not generated</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Book Metadata details -->
+        <div class="col-lg-8 col-xl-9">
+            <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <!-- Category Badge -->
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-indigo-subtle text-indigo px-3 py-2 rounded-pill fw-semibold">{{ book.category.name }}</span>
+                        {% if user.role == 'admin' %}
+                            <div class="dropdown">
+                                <button class="btn btn-light rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end bg-dark border-secondary border-opacity-25">
+                                    <li><a class="dropdown-menu-item dropdown-item fw-semibold text-primary" href="{% url 'book_edit' book.id %}"><i class="bi bi-pencil me-2"></i>Edit Book</a></li>
+                                    <li><a class="dropdown-menu-item dropdown-item fw-semibold text-danger" href="{% url 'book_delete' book.id %}"><i class="bi bi-trash me-2"></i>Delete Book</a></li>
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <h1 class="fw-extrabold text-white mt-2 mb-1" style="font-weight: 800; font-family: var(--font-display);">{{ book.title }}</h1>
+                    <h5 class="text-secondary fw-semibold mb-4">by {{ book.author }}</h5>
+
+                    <!-- Ratings stars -->
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <div class="text-warning fs-5">
+                            {% if avg_rating > 0 %}
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <span class="fw-bold text-white ms-1" style="font-size: 1rem;">{{ avg_rating|floatformat:1 }}</span>
+                                <span class="text-secondary ms-1" style="font-size: 0.85rem;">({{ reviews.count }} reviews)</span>
+                            {% else %}
+                                <span class="text-secondary" style="font-size: 0.85rem;">No reviews yet</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-white mb-2">Description</h6>
+                    <p class="text-secondary mb-4" style="line-height: 1.7; font-size: 0.95rem;">{{ book.description }}</p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6 col-md-4">
+                            <div class="p-3 rounded-3" style="background-color: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.04);">
+                                <small class="text-secondary d-block">Publisher</small>
+                                <span class="fw-semibold text-white">{{ book.publisher }}</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="p-3 rounded-3" style="background-color: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.04);">
+                                <small class="text-secondary d-block">Publication Date</small>
+                                <span class="fw-semibold text-white">{{ book.publication_date|default:"N/A" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="p-3 rounded-3" style="background-color: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.04);">
+                                <small class="text-secondary d-block">Copies Available</small>
+                                <span class="fw-semibold text-white">{{ book.available_copies }} / {{ book.total_copies }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Options / Reservations for Patrons -->
+                {% if user.role != 'admin' %}
+                    <div class="border-top border-secondary border-opacity-25 pt-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+                        <div>
+                            {% if book.available_copies > 0 %}
+                                <div class="text-success small fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Copies are currently available for immediate check-out.</div>
+                            {% else %}
+                                <div class="text-danger small fw-semibold"><i class="bi bi-info-circle-fill me-1"></i>All copies are currently borrowed. You can reserve the next available copy.</div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            {% if has_borrowed %}
+                                <span class="badge bg-secondary p-3 rounded-3 fs-6 w-100 border border-secondary border-opacity-25">You currently hold a copy</span>
+                            {% elif active_reservation %}
+                                <div class="text-end">
+                                    <span class="badge bg-info p-3 rounded-3 fs-6 mb-2 d-block">Reservation Status: {{ active_reservation.get_status_display }}</span>
+                                    <form action="{% url 'cancel_reservation' active_reservation.id %}" method="POST" class="m-0">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-link text-danger text-decoration-none p-0 w-100 text-center small">Cancel Reservation</button>
+                                    </form>
+                                </div>
+                            {% else %}
+                                {% if book.available_copies > 0 %}
+                                    {% for copy in copies %}
+                                        {% if copy.status == 'available' and forloop.first %}
+                                            <form action="{% url 'borrow_book' copy.copy_id %}" method="POST" class="m-0">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-primary btn-lg rounded-3 border-0 px-4 py-3 fw-bold shadow-sm" style="background: var(--gradient-accent);">
+                                                    Simulate Checkout
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    <form action="{% url 'reserve_book' book.id %}" method="POST" class="m-0">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-warning btn-lg rounded-3 border-0 px-4 py-3 fw-bold text-white shadow-sm">
+                                            Reserve Book
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- PHYSICAL COPIES & BORROWING SECTION FOR ADMIN -->
+    <div class="glass-card p-4 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold m-0 text-white">Physical Copies (Inventory)</h5>
+            {% if user.role == 'admin' %}
+                <a href="{% url 'copy_create' book.id %}" class="btn btn-outline-primary btn-sm rounded-3"><i class="bi bi-plus-lg me-1"></i>Add Copy ID</a>
+            {% endif %}
+        </div>
+        
+        {% if copies %}
+            <div class="table-responsive table-custom-wrapper border-0">
+                <table class="table table-custom">
+                    <thead>
+                        <tr>
+                            <th>Copy ID</th>
+                            <th>Shelf Location</th>
+                            <th>Status</th>
+                            {% if user.role == 'admin' %}
+                                <th>Librarian Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for copy in copies %}
+                            <tr>
+                                <td class="text-white"><code>{{ copy.copy_id }}</code></td>
+                                <td class="text-secondary">{{ copy.shelf_location }}</td>
+                                <td>
+                                    <span class="badge badge-premium badge-{% if copy.status == 'available' %}available{% elif copy.status == 'borrowed' %}borrowed{% elif copy.status == 'reserved' %}reserved{% else %}maintenance{% endif %}">
+                                        {{ copy.get_status_display }}
+                                    </span>
+                                </td>
+                                {% if user.role == 'admin' %}
+                                    <td>
+                                        {% if copy.status == 'available' %}
+                                            <form action="{% url 'borrow_book' copy.copy_id %}" method="POST" class="d-inline-flex align-items-center gap-2 m-0">
+                                                {% csrf_token %}
+                                                <select name="user_id" class="form-select form-select-sm rounded-3" style="width: 180px; background-color: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.08); color: white;" required>
+                                                    <option value="" disabled selected>Select borrower...</option>
+                                                    {% for u in users %}
+                                                        <option value="{{ u.id }}">{{ u.username }} ({{ u.role }})</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button type="submit" class="btn btn-primary btn-sm rounded-3 border-0 px-3">Issue</button>
+                                            </form>
+                                        {% elif copy.status == 'borrowed' %}
+                                            {% for b in copy.borrows.all %}
+                                                {% if b.status == 'active' or b.status == 'overdue' %}
+                                                    <form action="{% url 'return_book' b.id %}" method="POST" class="m-0 d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-outline-success btn-sm rounded-3 px-3">Confirm Return</button>
+                                                    </form>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                        
+                                        <a href="{% url 'copy_delete' book.id copy.id %}" class="btn btn-link btn-sm text-danger ms-3 text-decoration-none" title="Delete copy"><i class="bi bi-trash text-danger"></i></a>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-4 text-secondary">
+                <i class="bi bi-inbox fs-2 mb-2 d-block text-muted"></i>
+                <span>No physical copies entered for this book yet.</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- REVIEWS & RATINGS SECTION -->
+    <div class="row g-4">
+        <!-- Review addition form -->
+        <div class="col-lg-4">
+            <div class="glass-card p-4">
+                <h5 class="fw-bold mb-4 text-white">Rate & Review Book</h5>
+                <form action="{% url 'book_review' book.id %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Your Rating</label>
+                        {{ review_form.rating }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary">Comments</label>
+                        {{ review_form.review_text }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-3 border-0 py-2 fw-semibold">Submit Review</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Reviews list display -->
+        <div class="col-lg-8">
+            <div class="glass-card p-4 h-100">
+                <h5 class="fw-bold mb-4 text-white">User Reviews ({{ reviews.count }})</h5>
+                <div class="reviews-list" style="max-height: 400px; overflow-y: auto;">
+                    {% for review in reviews %}
+                        <div class="review-item border-bottom py-3 {% if forloop.last %}border-0{% endif %}" style="border-bottom-color: rgba(255,255,255,0.03) !important;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-indigo-subtle text-indigo rounded-circle fw-bold d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.8rem; background-color: rgba(99, 102, 241, 0.15); color: #818cf8;">
+                                        {{ review.user.username|slice:":2"|upper }}
+                                    </div>
+                                    <div class="fw-bold text-white">{{ review.user.get_full_name|default:review.user.username }}</div>
+                                </div>
+                                <div class="text-warning">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                        {% else %}
+                                            <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p class="text-secondary mt-2 mb-1" style="font-size: 0.9rem;">{{ review.review_text }}</p>
+                            <small class="text-muted" style="font-size: 0.75rem;">Reviewed on {{ review.created_at|date:"M d, Y" }}</small>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-5 text-secondary">
+                            <i class="bi bi-chat-text fs-2 mb-2 d-block text-muted"></i>
+                            <span>Be the first to review this book!</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

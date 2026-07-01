@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Patron Portal - SmartLibrary{% endblock %}
+{% block page_title %}Student Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    .icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 16px;
+    }
+    .icon-blue { background-color: #eff6ff; color: #3b82f6; }
+    .icon-green { background-color: #f0fdf4; color: #22c55e; }
+    .icon-red { background-color: #fef2f2; color: #ef4444; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Stat Summary Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-4">
+            <div class="stat-card">
+                <div class="icon-wrapper icon-blue">
+                    <i class="bi bi-journal-bookmark-fill"></i>
+                </div>
+                <div class="text-secondary small fw-semibold text-uppercase">Current Borrowed Books</div>
+                <h2 class="m-0 mt-1">{{ active_loans|length }}</h2>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="stat-card">
+                <div class="icon-wrapper icon-red">
+                    <i class="bi bi-cash-coin"></i>
+                </div>
+                <div class="text-secondary small fw-semibold text-uppercase">Outstanding Fines</div>
+                <h2 class="m-0 mt-1 text-danger">₹{{ total_unpaid_fine|floatformat:2 }}</h2>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="stat-card">
+                <div class="icon-wrapper icon-green">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div class="text-secondary small fw-semibold text-uppercase">Active Reservations</div>
+                <h2 class="m-0 mt-1">{{ reservations|length }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="row g-4">
+        <!-- Left Column: Loans, Reservations & Fines -->
+        <div class="col-lg-8">
+            <!-- Active Loans Card -->
+            <div class="custom-card mb-4">
+                <h5 class="fw-bold mb-4"><i class="bi bi-arrow-left-right text-teal me-2"></i>My Borrowed Books</h5>
+                <div class="table-responsive">
+                    <table class="table custom-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Book Title</th>
+                                <th>Copy ID</th>
+                                <th>Issue Date</th>
+                                <th>Due Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in active_loans %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ loan.book_copy.book.title }}</div>
+                                        <small class="text-muted">by {{ loan.book_copy.book.author }}</small>
+                                    </td>
+                                    <td><code>{{ loan.book_copy.copy_id }}</code></td>
+                                    <td>{{ loan.issue_date }}</td>
+                                    <td>
+                                        <span class="{% if loan.status == 'overdue' %}text-danger fw-bold{% endif %}">{{ loan.due_date }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <form method="POST" action="{% url 'renew_book' loan.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-teal btn-sm rounded-2">Renew</button>
+                                            </form>
+                                            <form method="POST" action="{% url 'return_book' loan.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm rounded-2">Return</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted small">You currently have no borrowed books</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Active Reservations Card -->
+            <div class="custom-card mb-4">
+                <h5 class="fw-bold mb-4"><i class="bi bi-hourglass-split text-teal me-2"></i>My Reservations</h5>
+                <div class="table-responsive">
+                    <table class="table custom-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Book Title</th>
+                                <th>Reserve Date</th>
+                                <th>Expiry Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for res in reservations %}
+                                <tr>
+                                    <td class="fw-bold">{{ res.book.title }}</td>
+                                    <td>{{ res.reserve_date }}</td>
+                                    <td>{{ res.expiry_date|default:"-" }}</td>
+                                    <td>
+                                        <span class="badge {% if res.status == 'ready' %}bg-success{% else %}bg-warning{% endif %}">{{ res.get_status_display }}</span>
+                                    </td>
+                                    <td>
+                                        <form method="POST" action="{% url 'cancel_reservation' res.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-2">Cancel</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted small">No active reservations</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Fines Card -->
+            <div class="custom-card">
+                <h5 class="fw-bold mb-4"><i class="bi bi-exclamation-triangle text-teal me-2"></i>My Fines</h5>
+                <div class="table-responsive">
+                    <table class="table custom-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Book Title</th>
+                                <th>Fine Amount</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fine in fines %}
+                                <tr>
+                                    <td>{{ fine.borrow_record.book_copy.book.title }}</td>
+                                    <td class="fw-bold text-danger">₹{{ fine.amount }}</td>
+                                    <td>
+                                        <span class="badge {% if fine.payment_status == 'paid' %}bg-success{% else %}bg-danger{% endif %}">{{ fine.get_payment_status_display }}</span>
+                                    </td>
+                                    <td>
+                                        {% if fine.payment_status == 'unpaid' %}
+                                            <form method="POST" action="{% url 'pay_fine' fine.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-teal btn-sm rounded-2">Pay Fine</button>
+                                            </form>
+                                        {% else %}
+                                            <small class="text-muted">Paid on {{ fine.paid_date }}</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted small">No fines recorded</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Announcements & Recommendations -->
+        <div class="col-lg-4">
+            <!-- Notices Card -->
+            <div class="custom-card mb-4">
+                <h5 class="fw-bold mb-4"><i class="bi bi-megaphone-fill text-teal me-2"></i>Announcements</h5>
+                <div class="list-group list-group-flush">
+                    {% for note in announcements %}
+                        <div class="list-group-item px-0 py-3 border-bottom">
+                            <div class="fw-bold text-dark">{{ note.title }}</div>
+                            <p class="small text-muted mb-2">{{ note.content }}</p>
+                            <small class="text-muted d-block" style="font-size: 0.7rem;">Published on {{ note.created_at|date:"Y-m-d" }}</small>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-4 text-muted small">No current announcements</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Recommended Books Card -->
+            <div class="custom-card">
+                <h5 class="fw-bold mb-4"><i class="bi bi-stars text-teal me-2"></i>Recommended Books</h5>
+                <div class="row g-3">
+                    {% for book in recommendations %}
+                        <div class="col-6 text-center">
+                            <a href="{% url 'book_detail' book.id %}" class="text-decoration-none text-dark">
+                                <div class="book-cover-container rounded-3 mb-2 mx-auto category-{{ book.category.slug }}" style="width: 100px; height: 140px; background: linear-gradient(135deg, var(--color-primary), var(--color-accent)); display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.08);">
+                                    {% if book.cover_image %}
+                                        <img src="{{ book.cover_image.url }}" class="w-100 h-100 rounded-3" style="object-fit: cover;">
+                                    {% else %}
+                                        <div class="p-2" style="font-size: 0.75rem;">{{ book.title|truncatechars:18 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="fw-bold text-truncate small">{{ book.title }}</div>
+                                <small class="text-muted text-truncate d-block small" style="font-size: 0.75rem;">{{ book.author }}</small>
+                            </a>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-3 text-muted small">No recommendations available</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

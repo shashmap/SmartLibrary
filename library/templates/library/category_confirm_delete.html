@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Category - SmartLibrary{% endblock %}
+{% block page_title %}Delete Category{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="card border-0 rounded-4 shadow-sm p-4 mx-auto text-center" style="max-width: 500px;">
+        <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
+        <h4 class="fw-bold mb-3">Delete Category Confirmation</h4>
+        <p class="text-secondary small mb-4">Are you sure you want to delete the category <strong>{{ object.name }}</strong>? Deleting a category will also delete all books nested under this category. This action cannot be undone.</p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="submit" class="btn btn-danger rounded-3 px-4 border-0">Delete Category</button>
+                <a href="{% url 'category_list' %}" class="btn btn-light rounded-3 px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

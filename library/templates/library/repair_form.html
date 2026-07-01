@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Record Repair - AI Diagnostics Hub{% endblock %}
+{% block page_title %}Record Device Repair{% block page_title_block %}{% endblock %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="custom-card shadow-sm border border-light-subtle">
+            <h5 class="fw-bold mb-1">Device Repair Worksheet</h5>
+            <p class="text-muted small mb-4">Technician tool to log board component refits, battery replacements, display fixes, and costs.</p>
+            
+            <form method="POST" action="{% url 'repair_create' %}">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Select Phone Node:</label>
+                        {{ form.device }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Assigned Technician:</label>
+                        {{ form.technician }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Repair Action Taken:</label>
+                        {{ form.repair_type }}
+                        <div class="form-text small text-muted">e.g. Battery Replacement, Motherboard Reballing</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Log Date:</label>
+                        {{ form.date }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Parts Replaced:</label>
+                        {{ form.parts_replaced }}
+                        <div class="form-text small text-muted">e.g. OEM battery 4500mAh, Screen Digitizer</div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label small fw-bold">Repair Cost ($):</label>
+                        {{ form.cost }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label small fw-bold">Completion Status:</label>
+                        {{ form.status }}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">Repair Notes / Diagnosis:</label>
+                    {{ form.notes }}
+                </div>
+
+                <div class="border-top pt-3 d-flex justify-content-end gap-2">
+                    <a href="{% url 'dashboard' %}" class="btn btn-light rounded-3 px-4">Cancel</a>
+                    <button type="submit" class="btn btn-teal rounded-3 px-4">Save Repair Worksheet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

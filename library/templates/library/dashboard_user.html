@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% block title %}Device Diagnostics Dashboard - AI Phone Failure Prediction{% endblock %}
+{% block page_title %}Industrial Telemetry Station{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <!-- Device Selector -->
+    <div class="d-flex align-items-center gap-3">
+        <label for="deviceSelect" class="form-label fw-bold mb-0">Select Device Node:</label>
+        <form method="GET" action="{% url 'dashboard' %}" id="deviceSelectForm">
+            <select name="device_id" id="deviceSelect" class="form-select rounded-3 shadow-none border-secondary border-opacity-20" onchange="this.form.submit()" style="width: 240px;">
+                {% for d in devices %}
+                    <option value="{{ d.id }}" {% if d.id == selected_device.id %}selected{% endif %}>{{ d.brand }} {{ d.model }} ({{ d.name }})</option>
+                {% empty %}
+                    <option value="">No registered devices</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    
+    <div class="d-flex gap-2">
+        <a href="{% url 'device_create' %}" class="btn btn-teal rounded-3"><i class="bi bi-phone-flip me-2"></i>Register New Phone</a>
+        {% if selected_device %}
+            <a href="{% url 'device_detail' selected_device.id %}" class="btn btn-outline-secondary rounded-3"><i class="bi bi-activity me-2"></i>Full Logs History</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if not selected_device %}
+    <div class="custom-card text-center py-5">
+        <i class="bi bi-phone fs-1 text-muted mb-3 d-block"></i>
+        <h3>No Monitored Phones Found</h3>
+        <p class="text-muted mb-4">Please register your Android smartphone to start running telemetry predictions and diagnostics.</p>
+        <a href="{% url 'device_create' %}" class="btn btn-teal rounded-3 px-4 py-2">Register Your Device</a>
+    </div>
+{% else %}
+
+    <!-- Top Alerts Widget (Warning bars) -->
+    {% if alerts %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-danger border-0 rounded-4 shadow-sm py-3 px-4 m-0">
+                    <h6 class="fw-bold mb-2 text-danger-emphasis"><i class="bi bi-exclamation-octagon-fill me-2"></i>Active Diagnostics Fault Warnings</h6>
+                    <ul class="mb-0 small ps-3 text-danger-emphasis">
+                        {% for a in alerts %}
+                            <li><b>{{ a.title }}</b>: {{ a.message }} <small class="text-muted">({{ a.timestamp|timesince }} ago)</small></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Main Grid System -->
+    <div class="row g-4 mb-4">
+        <!-- 1. Health gauge & AI Prediction widget -->
+        <div class="col-lg-4">
+            <div class="custom-card text-center h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-1 text-start">System Health Index</h5>
+                    <p class="text-muted small text-start">Real-time composite score based on ML telemetry checks</p>
+                </div>
+                
+                <div class="my-4 position-relative d-inline-block mx-auto" style="width: 160px; height: 160px;">
+                    <!-- Circular score visualizer using SVG -->
+                    <svg viewBox="0 0 36 36" class="w-100 h-100">
+                        <path class="text-light" stroke-width="3" stroke="rgba(0,0,0,0.06)" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path class="text-teal" stroke-dasharray="{% if latest_pred %}{{ latest_pred.health_score }}{% else %}95{% endif %}, 100" stroke-width="3" stroke="#0d9488" stroke-linecap="round" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    </svg>
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <h1 class="fw-bold m-0" style="font-size: 2.8rem; letter-spacing: -2px;">{% if latest_pred %}{{ latest_pred.health_score }}{% else %}--{% endif %}</h1>
+                        <small class="text-muted fw-bold uppercase">/ 100</small>
+                    </div>
+                </div>
+                
+                <div class="border-top pt-3 text-start">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Risk Level:</span>
+                        <span class="status-pill status-{% if latest_pred %}{{ latest_pred.risk_level }}{% else %}healthy{% endif %}">
+                            {% if latest_pred %}{{ latest_pred.risk_level|title }}{% else %}Healthy{% endif %}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">AI Confidence:</span>
+                        <span class="fw-bold small">{% if latest_pred %}{{ latest_pred.confidence_pct }}{% else %}--{% endif %}%</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Possible Issue:</span>
+                        <span class="fw-bold text-teal small">{% if latest_pred %}{{ latest_pred.primary_issue }}{% else %}None{% endif %}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Device Specifications -->
+        <div class="col-lg-4">
+            <div class="custom-card h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-1">Hardware Information</h5>
+                    <p class="text-muted small">General Android device node configuration</p>
+                </div>
+                
+                <div class="my-auto py-2">
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <span class="text-muted small">Manufacturer</span>
+                        <span class="fw-semibold small">{{ selected_device.brand }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <span class="text-muted small">Model Name</span>
+                        <span class="fw-semibold small">{{ selected_device.model }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <span class="text-muted small">Android OS Version</span>
+                        <span class="fw-semibold small">Android {{ selected_device.android_version }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <span class="text-muted small">RAM Size / Storage</span>
+                        <span class="fw-semibold small">{{ selected_device.ram_gb }} GB / {{ selected_device.storage_gb }} GB</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <span class="text-muted small">Processor Node</span>
+                        <span class="fw-semibold small text-truncate" style="max-width: 160px;" title="{{ selected_device.processor }}">{{ selected_device.processor|default:"N/A" }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2">
+                        <span class="text-muted small">Device Age</span>
+                        <span class="fw-semibold small">{{ selected_device.age_months }} Months</span>
+                    </div>
+                </div>
+                
+                <div class="border-top pt-3 d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Warranty Status:</span>
+                    <span class="fw-semibold small text-success">{% if selected_device.warranty_status %}Under Warranty{% else %}Expired{% endif %}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Key Subsystems Telemetry Overview (Battery, Charging, Temp) -->
+        <div class="col-lg-4">
+            <div class="custom-card h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-1">Live Telemetry Metrics</h5>
+                    <p class="text-muted small">Most recent node sensor outputs</p>
+                </div>
+                
+                <div class="my-auto py-2">
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-battery-half text-teal fs-5"></i>
+                            <span class="text-muted small">Battery Capacity Health</span>
+                        </div>
+                        <span class="fw-bold text-teal small">{% if battery_log %}{{ battery_log.health_pct }}{% else %}95{% endif %}%</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-thermometer-half text-teal fs-5"></i>
+                            <span class="text-muted small">CPU Temperature</span>
+                        </div>
+                        <span class="fw-semibold small">{% if latest_record %}{{ latest_record.cpu_temp|floatformat:1 }}{% else %}37.0{% endif %} °C</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-lightning-charge text-teal fs-5"></i>
+                            <span class="text-muted small">Charging Delivery Speed</span>
+                        </div>
+                        <span class="fw-semibold small">{% if latest_record %}{{ latest_record.charging_speed|floatformat:1 }}{% else %}15.0{% endif %} W</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-repeat text-teal fs-5"></i>
+                            <span class="text-muted small">Charging Cycles</span>
+                        </div>
+                        <span class="fw-semibold small">{% if battery_log %}{{ battery_log.charging_cycles }}{% else %}250{% endif %} Cycles</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between py-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-down-right-circle text-teal fs-5"></i>
+                            <span class="text-muted small">Active Battery Discharge</span>
+                        </div>
+                        <span class="fw-semibold small">{% if battery_log %}{{ battery_log.drain_rate_pct_per_hour|floatformat:1 }}{% else %}4.5{% endif %}% / hr</span>
+                    </div>
+                </div>
+                
+                <div class="border-top pt-3 d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">System Status:</span>
+                    <span class="fw-bold small text-success">ONLINE</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle: AI Breakdown and Recommendations -->
+    <div class="row g-4 mb-4">
+        <!-- Component Failure Breakdown Chart -->
+        <div class="col-lg-6">
+            <div class="custom-card h-100">
+                <h5 class="fw-bold mb-1">Hardware Failure Risks Distribution</h5>
+                <p class="text-muted small mb-4">AI prediction probability breakdown across hardware node segments</p>
+                <div style="height: 250px; position: relative;">
+                    <canvas id="risksChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations Engine output -->
+        <div class="col-lg-6">
+            <div class="custom-card h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-1">Prescriptive Recommendations</h5>
+                    <p class="text-muted small mb-3">AI-engineered hardware protective actions</p>
+                    
+                    <div class="recommendations-container" style="max-height: 240px; overflow-y: auto;">
+                        {% if recs %}
+                            {% for r in recs %}
+                                <div class="p-3 mb-2 rounded-3 border-start border-4 border-teal bg-light" style="font-size: 0.85rem;">
+                                    <div class="fw-bold text-dark mb-1">{{ r.title }}</div>
+                                    <div class="text-muted markdown-action-steps">{{ r.action_steps|linebreaksbr }}</div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small">All systems normal. Continue monthly self diagnostics.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="border-top pt-3 d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Recalibration: Automatic</span>
+                    <a href="{% url 'diagnostics' %}?device_id={{ selected_device.id }}" class="btn btn-teal btn-sm px-3 rounded-2"><i class="bi bi-heart-pulse me-1"></i>Run Diagnostic Test</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom: Interactive Trends and Diagnostics Log -->
+    <div class="row g-4 mb-4">
+        <!-- Telemetry Trends (Chart.js) -->
+        <div class="col-lg-8">
+            <div class="custom-card h-100">
+                <h5 class="fw-bold mb-1">Thermal & Load Telemetry Trends</h5>
+                <p class="text-muted small mb-4">Core processor and battery nodes fluctuations (Last 20 log cycles)</p>
+                <div style="height: 260px; position: relative;">
+                    <canvas id="telemetryTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diagnostics Log Card -->
+        <div class="col-lg-4">
+            <div class="custom-card h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-1">Self Diagnostic Records</h5>
+                    <p class="text-muted small mb-4">Last recorded outcomes from local hardware tests</p>
+                    
+                    <div class="list-group list-group-flush" style="font-size: 0.85rem;">
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                            <span class="text-muted"><i class="bi bi-hand-index-thumb me-2"></i>Touch Panel Test</span>
+                            <span class="badge {% if recent_touch.result == 'pass' %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
+                                {% if recent_touch %}{{ recent_touch.result|upper }}{% else %}NO RUN{% endif %}
+                            </span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                            <span class="text-muted"><i class="bi bi-mic me-2"></i>Microphone Test</span>
+                            <span class="badge {% if recent_mic.result == 'pass' %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
+                                {% if recent_mic %}{{ recent_mic.result|upper }}{% else %}NO RUN{% endif %}
+                            </span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                            <span class="text-muted"><i class="bi bi-volume-up me-2"></i>Speaker Tone Test</span>
+                            <span class="badge {% if recent_speaker.result == 'pass' %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
+                                {% if recent_speaker %}{{ recent_speaker.result|upper }}{% else %}NO RUN{% endif %}
+                            </span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                            <span class="text-muted"><i class="bi bi-camera me-2"></i>Camera Node Test</span>
+                            <span class="badge {% if recent_camera.result == 'pass' %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
+                                {% if recent_camera %}{{ recent_camera.result|upper }}{% else %}NO RUN{% endif %}
+                            </span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                            <span class="text-muted"><i class="bi bi-display me-2"></i>Display Panel Test</span>
+                            <span class="badge {% if recent_display.result == 'pass' %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
+                                {% if recent_display %}{{ recent_display.result|upper }}{% else %}NO RUN{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="border-top pt-3 d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Exporter Node</span>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'download_report' 'health' %}?device_id={{ selected_device.id }}" class="btn btn-outline-secondary btn-sm rounded-2"><i class="bi bi-file-pdf me-1"></i>PDF</a>
+                        <a href="{% url 'download_csv' %}?device_id={{ selected_device.id }}" class="btn btn-outline-secondary btn-sm rounded-2"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if selected_device %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Risks distribution bar chart
+        const risksCtx = document.getElementById('risksChart').getContext('2d');
+        const risksChart = new Chart(risksCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Battery', 'PMIC', 'Motherboard', 'Charging IC', 'Display/Touch', 'Flash/Memory'],
+                datasets: [{
+                    label: 'Failure Risk Probability (%)',
+                    data: [
+                        {% if latest_pred %}
+                            {{ latest_pred.battery_risk_pct }},
+                            {{ latest_pred.pmic_risk_pct }},
+                            {{ latest_pred.motherboard_risk_pct }},
+                            {{ latest_pred.charging_ic_risk_pct }},
+                            {{ latest_pred.display_risk_pct }},
+                            {{ latest_pred.storage_risk_pct }}
+                        {% else %}
+                            12, 8, 5, 14, 6, 11
+                        {% endif %}
+                    ],
+                    backgroundColor: [
+                        'rgba(13, 148, 136, 0.75)', // Teal
+                        'rgba(51, 65, 85, 0.75)',   // Slate
+                        'rgba(225, 29, 72, 0.75)',   // Rose (Motherboard/PMIC/Charge risks can be color coded)
+                        'rgba(234, 88, 12, 0.75)',   // Orange
+                        'rgba(79, 70, 229, 0.75)',   // Indigo
+                        'rgba(124, 58, 237, 0.75)'   // Violet
+                    ],
+                    borderColor: [
+                        '#0d9488', '#334155', '#e11d48', '#ea580c', '#4f70e5', '#7c3aed'
+                    ],
+                    borderWidth: 1.5,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#f1f5f9' },
+                        ticks: { callback: function(value) { return value + "%" } }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. Telemetry trend line charts (CPU & Battery Temperature + Usages)
+        const trendData = JSON.parse('{{ chart_data|safe }}');
+        const trendCtx = document.getElementById('telemetryTrendChart').getContext('2d');
+        const trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: trendData.labels,
+                datasets: [
+                    {
+                        label: 'CPU Temp (°C)',
+                        data: trendData.cpu_temps,
+                        borderColor: '#e11d48', // Red
+                        backgroundColor: 'rgba(225, 29, 72, 0.05)',
+                        borderWidth: 2,
+                        tension: 0.35,
+                        fill: true,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Battery Temp (°C)',
+                        data: trendData.bat_temps,
+                        borderColor: '#ea580c', // Orange
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        tension: 0.35,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'CPU Usage (%)',
+                        data: trendData.cpu_usages,
+                        borderColor: '#0d9488', // Teal
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        tension: 0.3,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Temperature (°C)' },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Resource Load (%)' },
+                        grid: { drawOnChartArea: false },
+                        min: 0,
+                        max: 100
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

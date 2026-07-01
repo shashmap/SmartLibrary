@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Sign In - SmartLibrary{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-lg overflow-hidden" style="border-radius: 28px;">
+            <div class="row g-0 min-vh-60">
+                <!-- Left Side: Brand Panel -->
+                <div class="col-lg-6 d-none d-lg-flex flex-column justify-content-between p-5 text-dark position-relative" style="background: linear-gradient(rgba(255, 252, 245, 0.35), rgba(255, 252, 245, 0.35)), url('{% static 'images/library_login_bg.png' %}'); background-size: cover; background-position: center; border-radius: 28px 0 0 28px; color: #0f172a !important; min-height: 450px;">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10" style="background-image: radial-gradient(circle, #000000 1px, transparent 1px); background-size: 24px 24px;"></div>
+                    
+                    <div class="d-flex align-items-center gap-2 fs-4 fw-bold z-1">
+                        <i class="bi bi-book text-dark"></i>
+                        <span style="font-family: var(--font-display); font-weight: 700;">SmartLibrary</span>
+                    </div>
+                    
+                    <div class="my-auto z-1" style="max-width: 500px;">
+                        <h1 class="display-5 fw-extrabold mb-4" style="line-height: 1.15; font-weight: 900; font-family: var(--font-display); color: #080c14;">Welcome to the Next-Gen Smart Library.</h1>
+                        <p class="lead" style="font-weight: 500; color: #1e293b; opacity: 0.9;">Access the campus book catalog instantly, borrow using physical scans, track renewals, review books, and receive AI recommendations.</p>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between z-1 mt-5" style="color: #475569; font-weight: 600;">
+                        <small>&copy; 2026 Smart Library System</small>
+                        <div class="d-flex gap-3">
+                            <i class="bi bi-shield-lock"></i>
+                            <i class="bi bi-globe"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Login Box -->
+                <div class="col-lg-6 d-flex align-items-center justify-content-center p-5 bg-white">
+                    <div class="w-100" style="max-width: 400px;">
+                        <div class="text-center mb-4 d-lg-none">
+                            <div class="brand-icon mx-auto mb-3" style="width: 50px; height: 50px; font-size: 1.5rem; background: linear-gradient(135deg, var(--color-primary), var(--color-accent)); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white;">
+                                <i class="bi bi-book"></i>
+                            </div>
+                            <h3 class="fw-bold mb-1">SmartLibrary Login</h3>
+                        </div>
+                        
+                        <div class="text-center mb-5 d-none d-lg-block">
+                            <h3 class="fw-bold mb-1">Account Sign In</h3>
+                            <p class="text-muted small">Enter your credentials to access your library dashboard</p>
+                        </div>
+                        
+                        <form method="POST" action="{% url 'login' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="login_username" class="form-label small fw-bold">Username</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi bi-person text-muted"></i></span>
+                                    {{ form.username }}
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="login_password" class="form-label small fw-bold">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi bi-key text-muted"></i></span>
+                                    {{ form.password }}
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-teal w-100 rounded-3 py-2.5 mb-3">Sign In</button>
+                        </form>
+                        
+                        <div class="text-center">
+                            <span class="small text-muted">Don't have an account? <a href="{% url 'register' %}" class="text-teal fw-semibold">Register here</a></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

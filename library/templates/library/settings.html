@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Settings & Tools - AI Phone Diagnostics{% endblock %}
+{% block page_title %}Settings & Support Tools{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6">
+        <!-- Telemetry Simulation tools -->
+        <div class="custom-card mb-4">
+            <h5 class="fw-bold mb-1">Telemetry Simulator Tools</h5>
+            <p class="text-muted small mb-4">Admin commands to feed mock device data streams or clear diagnostic tables.</p>
+            
+            <form method="POST" action="{% url 'settings' %}" class="mb-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="simulate_logs">
+                <div class="mb-3">
+                    <h6 class="fw-bold mb-1">Generate Telemetry Stream Simulation</h6>
+                    <small class="text-muted d-block mb-3">Generates 20 mock hourly logging records (temperatures, discharge rate, RAM/storage usages) for all registered device nodes to populate trends charts.</small>
+                    <button type="submit" class="btn btn-teal rounded-3"><i class="bi bi-broadcast me-2"></i>Run Telemetry Stream</button>
+                </div>
+            </form>
+            
+            <hr class="my-4">
+            
+            <form method="POST" action="{% url 'settings' %}" onsubmit="return confirm('WARNING: This will delete ALL telemetry health logs, predictions, recommendations, and alerts database records. Users and devices will remain intact. Proceed?')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reset_db">
+                <div>
+                    <h6 class="fw-bold text-danger mb-1">Clear Diagnostics Tables</h6>
+                    <small class="text-muted d-block mb-3">Wipes all logged health records, battery details, charging metrics, predictions, recommendations, and alerts.</small>
+                    <button type="submit" class="btn btn-outline-danger rounded-3"><i class="bi bi-trash3 me-2"></i>Clear Telemetry Database</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <!-- Settings Form for Threshold Configuration -->
+        <div class="custom-card">
+            <h5 class="fw-bold mb-1">Global System Configuration</h5>
+            <p class="text-muted small mb-4">Configure notification parameters and telemetry fault thresholds.</p>
+            
+            <form onsubmit="event.preventDefault(); alert('Configurations saved! (Simulated)')">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Critical Temperature Threshold (°C)</label>
+                    <input type="number" class="form-control rounded-3" value="45" min="30" max="60">
+                    <div class="form-text small">Triggers critical overheat alarms when battery exceeds this limit.</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">High CPU Load Alert Margin (%)</label>
+                    <input type="number" class="form-control rounded-3" value="85" min="50" max="100">
+                    <div class="form-text small">Generates warning alerts for sustained usage logs.</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Battery Wear Degradation Threshold (%)</label>
+                    <input type="number" class="form-control rounded-3" value="80" min="50" max="95">
+                    <div class="form-text small">Flags battery replacement recommendations below this health percentage.</div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">Background Telemetry Logging Cycle</label>
+                    <select class="form-select rounded-3">
+                        <option value="1">Every 1 Hour (Standard)</option>
+                        <option value="6">Every 6 Hours</option>
+                        <option value="12">Every 12 Hours</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-teal w-100 rounded-3">Save Server Thresholds</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

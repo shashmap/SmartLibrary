@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}About Project - AI Phone Diagnostics{% endblock %}
+{% block page_title %}Project Architecture & Rationale{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="custom-card">
+            <h4 class="fw-bold mb-3">Early Warning Failure Prediction Platform</h4>
+            
+            <p class="text-muted" style="line-height: 1.7;">
+                This project was inspired by a real-world incident where a smartphone gradually displayed symptom patterns—such as mild overheating, microphone drops, speaker disturbances, charging instability, and spontaneous reboots—concluding in a catastrophic motherboard processor failure that resulted in complete, unrecoverable data loss.
+            </p>
+            
+            <p class="text-muted" style="line-height: 1.7;">
+                Smartphone motherboards contain many microscopic surface-mount components (PMICs, Charging ICs, Filter Capacitors, CPU solder balls) that degrade slowly before failing completely. While Android applications do not have low-level access to measure resistance or solder stress directly, the system board emits clear macroscopic signals.
+            </p>
+            
+            <h5 class="fw-bold mt-4 mb-3 text-teal">System Pipeline Architecture</h5>
+            
+            <div class="row g-4 text-center my-2">
+                <div class="col-md-3">
+                    <div class="p-3 border rounded-3 bg-light h-100">
+                        <div class="fs-3 text-teal"><i class="bi bi-broadcast"></i></div>
+                        <h6 class="fw-bold mt-2">1. Ingestion Node</h6>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">Background Android monitors POST telemetry to /api/v1/telemetry/log/</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 border rounded-3 bg-light h-100">
+                        <div class="fs-3 text-teal"><i class="bi bi-bar-chart-line"></i></div>
+                        <h6 class="fw-bold mt-2">2. Processing Deck</h6>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">Standard Scalers normalize 25 features inside Django pipeline</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 border rounded-3 bg-light h-100">
+                        <div class="fs-3 text-teal"><i class="bi bi-cpu"></i></div>
+                        <h6 class="fw-bold mt-2">3. ML Inference</h6>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">Active XGBoost/RandomForest classifiers evaluate failure probabilities</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 border rounded-3 bg-light h-100">
+                        <div class="fs-3 text-teal"><i class="bi bi-envelope-exclamation"></i></div>
+                        <h6 class="fw-bold mt-2">4. Alert triggers</h6>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">Triggers Alerts, push notification alerts, and data backup warnings</small>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mt-4 mb-3 text-teal">Future Expansion Goals</h5>
+            <ul class="text-muted small ps-3 mb-0" style="line-height: 1.7;">
+                <li class="mb-2"><b>Real Android Monitor Ingestion</b>: Integration of a native Kotlin background service to log actual device temperatures, cycles, and crash events.</li>
+                <li class="mb-2"><b>Firebase Messaging integration</b>: Deploy real-time push alerts straight to the user's notification shades on threshold breaches.</li>
+                <li class="mb-2"><b>Wear OS Node extension</b>: Collect companion smartwatch biometrics and thermal stress data.</li>
+                <li><b>Production Deployment</b>: Migrate database schema to PostgreSQL, wrap system inside Docker containers, and host in Kubernetes clusters.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

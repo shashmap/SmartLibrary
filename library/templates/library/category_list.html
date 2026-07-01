@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Categories - SmartLibrary{% endblock %}
+{% block page_title %}Book Categories{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold m-0 text-white">Library Categories</h5>
+        {% if user.role == 'admin' %}
+            <a href="{% url 'category_create' %}" class="btn btn-primary rounded-3"><i class="bi bi-plus-lg me-1"></i>Add Category</a>
+        {% endif %}
+    </div>
+
+    {% if categories %}
+        <div class="table-responsive table-custom-wrapper">
+            <table class="table table-custom">
+                <thead>
+                    <tr>
+                        <th>Category Name</th>
+                        <th>Description</th>
+                        <th>Book Count</th>
+                        {% if user.role == 'admin' %}
+                            <th>Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categories %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-white">{{ cat.name }}</div>
+                                <small class="text-secondary">Slug: <code>{{ cat.slug }}</code></small>
+                            </td>
+                            <td class="text-secondary">{{ cat.description|default:"No description provided." }}</td>
+                            <td>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-3 py-2">{{ cat.books.count }} Books</span>
+                            </td>
+                            {% if user.role == 'admin' %}
+                                <td>
+                                    <a href="{% url 'category_edit' cat.slug %}" class="btn btn-outline-primary btn-sm rounded-3 me-1">Edit</a>
+                                    <a href="{% url 'category_delete' cat.slug %}" class="btn btn-link text-danger btn-sm text-decoration-none">Delete</a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-5 glass-card rounded-4">
+            <i class="bi bi-tags fs-1 text-secondary mb-3 d-block"></i>
+            <h5 class="fw-bold text-white">No categories created yet</h5>
+            <a href="{% url 'category_create' %}" class="btn btn-primary rounded-3 mt-2">Create First Category</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

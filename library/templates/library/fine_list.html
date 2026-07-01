@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Fine Manager - SmartLibrary{% endblock %}
+{% block page_title %}Fine Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="glass-card p-4">
+        <h5 class="fw-bold mb-4 text-white"><i class="bi bi-cash-coin text-primary me-2"></i>Library Fines & Payments Ledger</h5>
+
+        {% if fines %}
+            <div class="table-responsive table-custom-wrapper">
+                <table class="table table-custom">
+                    <thead>
+                        <tr>
+                            <th>User (Patron)</th>
+                            <th>Book Title</th>
+                            <th>Fine Amount</th>
+                            <th>Payment Status</th>
+                            <th>Paid Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fine in fines %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-white">{{ fine.borrow_record.user.get_full_name|default:fine.borrow_record.user.username }}</div>
+                                    <small class="text-secondary">Username: {{ fine.borrow_record.user.username }}</small>
+                                </td>
+                                <td>
+                                    <div class="text-white">{{ fine.borrow_record.book_copy.book.title }}</div>
+                                    <small class="text-secondary">Due date was: {{ fine.borrow_record.due_date }}</small>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-danger">₹{{ fine.amount|floatformat:2 }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-premium badge-{% if fine.payment_status == 'paid' %}available{% else %}overdue{% endif %}">
+                                        {{ fine.get_payment_status_display }}
+                                    </span>
+                                </td>
+                                <td class="text-secondary">{{ fine.paid_date|default:"N/A" }}</td>
+                                <td>
+                                    {% if fine.payment_status == 'unpaid' %}
+                                        <form action="{% url 'pay_fine' fine.id %}" method="POST" class="m-0">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-primary btn-sm rounded-3 py-1 px-3">Mark Paid</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="text-success small fw-semibold"><i class="bi bi-patch-check-fill me-1"></i>Cleared</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-success">
+                <i class="bi bi-emoji-smile fs-1 d-block mb-3"></i>
+                <h5 class="fw-bold m-0 text-white">No outstanding fines recorded in system!</h5>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

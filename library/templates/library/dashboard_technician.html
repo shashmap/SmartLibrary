@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}Technician Dashboard - AI Phone Diagnostics{% endblock %}
+{% block page_title %}Technician Workstation{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="custom-card py-4 text-center">
+            <h3 class="fw-bold text-teal m-0">{{ assigned_devices.count }}</h3>
+            <small class="text-muted">Devices Assigned to You</small>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="custom-card py-4 text-center">
+            <h3 class="fw-bold text-warning m-0">{{ pending_repairs }}</h3>
+            <small class="text-muted">Pending Repair Worksheets</small>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Assigned Devices -->
+    <div class="col-lg-7">
+        <div class="custom-card h-100">
+            <h5 class="fw-bold mb-3">Assigned Devices Queue</h5>
+            <div class="table-responsive">
+                <table class="table table-hover custom-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Owner</th>
+                            <th>Brand / Model</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dev in assigned_devices %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ dev.owner.username }}</div>
+                                    <small class="text-muted">{{ dev.owner.email }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ dev.brand }} {{ dev.model }}</div>
+                                    <small class="text-muted">{{ dev.name }}</small>
+                                </td>
+                                <td>
+                                    <span class="status-pill status-{{ dev.current_status }}">
+                                        {{ dev.current_status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle rounded-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border border-light-subtle">
+                                            <li><a class="dropdown-item" href="{% url 'device_detail' dev.id %}"><i class="bi bi-eye me-2 text-muted"></i>View Details</a></li>
+                                            <li><a class="dropdown-item" href="{% url 'diagnostics' %}?device_id={{ dev.id }}"><i class="bi bi-heart-pulse me-2 text-muted"></i>Run Diagnostics</a></li>
+                                            <li><a class="dropdown-item" href="{% url 'repair_create' %}?device_id={{ dev.id }}"><i class="bi bi-wrench-adjustable me-2 text-muted"></i>Record Repair</a></li>
+                                            <li><a class="dropdown-item" href="{% url 'service_create' %}?device_id={{ dev.id }}"><i class="bi bi-journal-medical me-2 text-muted"></i>Log Service</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">You do not have any devices currently assigned.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Repairs -->
+    <div class="col-lg-5">
+        <div class="custom-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0">Your Recent Repair Records</h5>
+                <a href="{% url 'repair_create' %}" class="btn btn-teal btn-sm rounded-2"><i class="bi bi-plus-circle me-1"></i>New Record</a>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover custom-table">
+                    <thead>
+                        <tr>
+                            <th>Device</th>
+                            <th>Repair Type</th>
+                            <th>Cost</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rep in repairs %}
+                            <tr>
+                                <td class="fw-semibold">{{ rep.device.brand }} {{ rep.device.model }}</td>
+                                <td>
+                                    <div class="small fw-semibold">{{ rep.repair_type }}</div>
+                                    <small class="text-muted">{{ rep.date|date:"Y-m-d" }}</small>
+                                </td>
+                                <td>${{ rep.cost }}</td>
+                                <td>
+                                    {% if rep.status == 'completed' %}
+                                        <span class="badge bg-success rounded-pill">Done</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark rounded-pill">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No repair records logged recently.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

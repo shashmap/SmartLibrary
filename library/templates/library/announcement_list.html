@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Notices & Announcements - SmartLibrary{% endblock %}
+{% block page_title %}Notices & Announcements{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold m-0">Library Notices</h5>
+        {% if user.role == 'admin' %}
+            <a href="{% url 'announcement_create' %}" class="btn btn-primary rounded-3"><i class="bi bi-plus-lg me-1"></i>Publish Announcement</a>
+        {% endif %}
+    </div>
+
+    <div class="row g-4">
+        {% for ann in announcements %}
+            <div class="col-md-12">
+                <div class="card border-0 rounded-4 shadow-sm p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="fw-bold text-dark m-0">{{ ann.title }}</h5>
+                        <span class="badge bg-light text-secondary rounded-pill">{{ ann.created_at|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="mb-3 text-secondary small">
+                        Target Audience: <span class="badge bg-secondary-subtle text-secondary text-capitalize">{{ ann.get_target_role_display }}</span>
+                    </div>
+                    <p class="text-secondary m-0" style="line-height: 1.7; font-size: 0.95rem;">{{ ann.content }}</p>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5 bg-white rounded-4 border">
+                    <i class="bi bi-megaphone fs-1 text-muted mb-3 d-block"></i>
+                    <h5 class="fw-bold text-dark">No announcements published yet</h5>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

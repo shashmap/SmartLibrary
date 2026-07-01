@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Profile - SmartLibrary{% endblock %}
+{% block page_title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="card border-0 rounded-4 shadow-sm p-4 mx-auto" style="max-width: 700px;">
+        <h5 class="fw-bold mb-4">Update Profile Information</h5>
+        
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary">First Name</label>
+                    {{ user_form.first_name }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary">Last Name</label>
+                    {{ user_form.last_name }}
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary">Email Address</label>
+                    {{ user_form.email }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary">Phone Number</label>
+                    {{ user_form.phone }}
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-secondary">Profile Image</label>
+                {{ user_form.profile_picture }}
+            </div>
+
+            <!-- Student Profile specifics -->
+            {% if student_form %}
+                <h5 class="fw-bold text-dark mb-3 border-top pt-4">Student Profile Details</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Roll Number</label>
+                        {{ student_form.roll_number }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Department</label>
+                        {{ student_form.department }}
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-semibold text-secondary">Membership Expiry Date</label>
+                        {{ student_form.membership_expiry }}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Faculty Profile specifics -->
+            {% if faculty_form %}
+                <h5 class="fw-bold text-dark mb-3 border-top pt-4">Faculty Profile Details</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Employee ID</label>
+                        {{ faculty_form.employee_id }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Department</label>
+                        {{ faculty_form.department }}
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-semibold text-secondary">Research Interests Area</label>
+                        {{ faculty_form.research_interest }}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="d-flex gap-2 border-top pt-4">
+                <button type="submit" class="btn btn-primary rounded-3 px-4 border-0" style="background: var(--primary-gradient);">Save Details</button>
+                <a href="{% url 'profile' %}" class="btn btn-light rounded-3 px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

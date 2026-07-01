@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Librarian Dashboard - SmartLibrary{% endblock %}
+{% block page_title %}Librarian Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Stat Summary Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="icon-wrapper icon-blue">
+                    <i class="bi bi-book"></i>
+                </div>
+                <div class="text-secondary small fw-semibold text-uppercase">Total Catalog Books</div>
+                <h2 class="m-0 mt-1 text-white">{{ total_books }}</h2>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="icon-wrapper icon-purple">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="text-secondary small fw-semibold text-uppercase">Active Members</div>
+                <h2 class="m-0 mt-1 text-white">{{ total_users }}</h2>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="icon-wrapper icon-green">
+                    <i class="bi bi-journal-check"></i>
+                </div>
+                <div class="text-secondary small fw-semibold text-uppercase">Active Loans</div>
+                <h2 class="m-0 mt-1 text-white">{{ active_loans }}</h2>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="icon-wrapper icon-red">
+                    <i class="bi bi-exclamation-octagon"></i>
+                </div>
+                <div class="text-secondary small fw-semibold text-uppercase">Overdue Loans</div>
+                <h2 class="m-0 mt-1 text-danger">{{ overdue_loans }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="row g-4">
+        <!-- Left Column: Operations tables -->
+        <div class="col-lg-8">
+            <!-- Active Loans Card -->
+            <div class="glass-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold m-0 text-white"><i class="bi bi-arrow-left-right text-primary me-2"></i>Recent Active Loans</h5>
+                    <a href="{% url 'book_list' %}" class="btn btn-primary btn-sm rounded-3"><i class="bi bi-plus-lg me-1"></i>Issue New Book</a>
+                </div>
+                
+                {% if recent_loans %}
+                    <div class="table-responsive table-custom-wrapper">
+                        <table class="table table-custom align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Patron</th>
+                                    <th>Book Title (Copy ID)</th>
+                                    <th>Issue Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in recent_loans %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-white">{{ loan.user.get_full_name|default:loan.user.username }}</div>
+                                            <small class="text-secondary">Username: {{ loan.user.username }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="text-white">{{ loan.book_copy.book.title }}</div>
+                                            <small class="text-secondary">Copy: <code>{{ loan.book_copy.copy_id }}</code></small>
+                                        </td>
+                                        <td class="text-secondary">{{ loan.issue_date }}</td>
+                                        <td class="text-secondary">{{ loan.due_date }}</td>
+                                        <td>
+                                            <span class="badge badge-premium badge-{% if loan.status == 'overdue' %}overdue{% else %}borrowed{% endif %}">
+                                                {{ loan.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5 text-secondary">
+                        <i class="bi bi-journal-x fs-1 d-block mb-3"></i>
+                        <h5>No active borrowings recorded in system</h5>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Recent Activity Log Card -->
+            <div class="glass-card">
+                <h5 class="fw-bold mb-4 text-white"><i class="bi bi-clock-history text-primary me-2"></i>Recent System Activity</h5>
+                <div class="list-group list-group-flush">
+                    {% for act in activities %}
+                        <div class="list-group-item px-0 py-3 border-bottom d-flex align-items-center justify-content-between bg-transparent border-secondary border-opacity-10">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center text-primary" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-clock-history"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-white">{{ act.action }}</div>
+                                    <small class="text-secondary">{{ act.details|default:"System action" }}</small>
+                                </div>
+                            </div>
+                            <small class="text-secondary">{{ act.timestamp|timesince }} ago</small>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-4 text-secondary small">No recent activity recorded</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Analytics & Chart -->
+        <div class="col-lg-4">
+            <!-- Category Distribution Chart Card -->
+            <div class="glass-card mb-4">
+                <h5 class="fw-bold mb-4 text-white"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Book Distribution</h5>
+                <div style="position: relative; height: 260px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Top Patrons Card -->
+            <div class="glass-card">
+                <h5 class="fw-bold mb-4 text-white"><i class="bi bi-award-fill text-primary me-2"></i>Top Patrons</h5>
+                <div class="list-group list-group-flush">
+                    {% for reader in top_readers %}
+                        <div class="list-group-item px-0 py-2 border-bottom d-flex align-items-center justify-content-between bg-transparent border-secondary border-opacity-10">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold small" style="width: 32px; height: 32px; background-size: cover; {% if reader.profile_picture %}background-image: url('{{ reader.profile_picture.url }}'){% endif %}">
+                                    {% if not reader.profile_picture %}
+                                        {{ reader.username|slice:":1"|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="fw-bold text-white">{{ reader.username }}</div>
+                            </div>
+                            <span class="badge bg-secondary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1.5">{{ reader.borrow_count }} Loans</span>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-3 text-secondary small">No readers logged yet</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const chartData = JSON.parse('{{ chart_data_json|escapejs }}');
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    data: chartData.data,
+                    backgroundColor: [
+                        '#6366f1', // Indigo/Primary
+                        '#a855f7', // Violet/Secondary
+                        '#ec4899', // Pink
+                        '#10b981', // Emerald
+                        '#34d399', // Mint
+                        '#f59e0b', // Amber
+                        '#3b82f6', // Blue
+                        '#94a3b8'  // Slate
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#94a3b8', // Accessible text color for dark theme
+                            boxWidth: 12,
+                            padding: 15,
+                            font: {
+                                family: 'Outfit',
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                cutout: '75%'
+            }
+        });
+    });
+</script>
+{% endblock %}

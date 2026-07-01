@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Copy ID - SmartLibrary{% endblock %}
+{% block page_title %}Add Copy ID{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="card border-0 rounded-4 shadow-sm p-4 mx-auto" style="max-width: 500px;">
+        <h5 class="fw-bold mb-2">Add Physical Copy</h5>
+        <p class="text-secondary small mb-4">Book: <strong>{{ book.title }}</strong></p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-secondary">Physical Copy ID</label>
+                {{ form.copy_id }}
+                <div class="form-text" style="font-size: 0.75rem;">Create a unique identifier (e.g. CP-{{ book.id|stringformat:"04d" }}-X)</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-secondary">Shelf Location</label>
+                {{ form.shelf_location }}
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-secondary">Initial Status</label>
+                {{ form.status }}
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary rounded-3 px-4 border-0" style="background: var(--primary-gradient);">Add Copy</button>
+                <a href="{% url 'book_detail' book.id %}" class="btn btn-light rounded-3 px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

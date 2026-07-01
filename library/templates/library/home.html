@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Welcome to SmartLibrary{% endblock %}
+
+{% block content %}
+<div class="row align-items-center justify-content-center py-5">
+    <div class="col-lg-8 text-center">
+        <div class="brand-icon mx-auto mb-4" style="width: 60px; height: 60px; font-size: 2rem; background: linear-gradient(135deg, var(--color-primary), var(--color-accent)); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white;">
+            <i class="bi bi-book"></i>
+        </div>
+        <h1 class="display-4 fw-bold mb-3" style="letter-spacing: -1.5px;">Welcome to the Campus SmartLibrary</h1>
+        <p class="lead text-muted mb-5" style="max-width: 650px; margin: 0 auto;">
+            Access our extensive book catalogue, track active borrowings, renew loans online, review your favorite textbooks, and receive automated personalized reading recommendations.
+        </p>
+        
+        <div class="row g-4 mb-5 text-start justify-content-center">
+            <div class="col-md-4">
+                <div class="custom-card h-100 text-center py-4">
+                    <div class="text-teal fs-1 mb-2" style="color: var(--color-primary);"><i class="bi bi-search"></i></div>
+                    <h5 class="fw-bold">Dynamic Catalog</h5>
+                    <p class="small text-muted mb-0">Search books by title, author, category, or ISBN instantly with live availability status.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="custom-card h-100 text-center py-4">
+                    <div class="text-teal fs-1 mb-2" style="color: var(--color-primary);"><i class="bi bi-qr-code-scan"></i></div>
+                    <h5 class="fw-bold">Self Checkout</h5>
+                    <p class="small text-muted mb-0">Borrow books seamlessly via copy IDs and track your due date reminders automatically.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="custom-card h-100 text-center py-4">
+                    <div class="text-teal fs-1 mb-2" style="color: var(--color-primary);"><i class="bi bi-stars"></i></div>
+                    <h5 class="fw-bold">AI Recommendations</h5>
+                    <p class="small text-muted mb-0">Get smart suggestions for reading materials based on popularity and category matching.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'register' %}" class="btn btn-teal btn-lg px-4 rounded-3">Register Account</a>
+            <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-lg px-4 rounded-3">Sign In</a>
+        </div>
+    </div>
+</div>
+
+<div class="border-top my-5"></div>
+
+<!-- System Statistics deck -->
+<div class="row g-4 text-center justify-content-center">
+    <div class="col-md-3">
+        <div class="custom-card">
+            <h2 class="fw-bold text-teal m-0" style="color: var(--color-primary);">{{ total_books }}</h2>
+            <small class="text-muted">Total Books</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="custom-card">
+            <h2 class="fw-bold text-teal m-0" style="color: var(--color-primary);">{{ total_categories }}</h2>
+            <small class="text-muted">Subject Categories</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="custom-card">
+            <h2 class="fw-bold text-teal m-0" style="color: var(--color-primary);">{{ total_members }}</h2>
+            <small class="text-muted">Active Members</small>
+        </div>
+    </div>
+</div>
+{% endblock %}

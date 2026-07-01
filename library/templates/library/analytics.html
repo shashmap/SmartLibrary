@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}System Analytics - AI Phone Diagnostics{% endblock %}
+{% block page_title %}Model Analytics & Metrics{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Active Model Details -->
+    <div class="col-12">
+        <div class="custom-card">
+            <h5 class="fw-bold mb-3"><i class="bi bi-cpu text-teal me-2"></i>Active Diagnostics Engine Performance</h5>
+            {% if models %}
+                <div class="row g-4 text-center">
+                    {% for m in models %}
+                        {% if m.is_active %}
+                            <div class="col-md-2 border-end">
+                                <h6 class="text-muted small uppercase">Trained Classifier</h6>
+                                <h5 class="fw-bold text-teal m-0">{{ m.name }}</h5>
+                            </div>
+                            <div class="col-md-2 border-end">
+                                <h6 class="text-muted small">Accuracy</h6>
+                                <h4 class="fw-bold m-0">{{ m.accuracy_pct }}%</h4>
+                            </div>
+                            <div class="col-md-2 border-end">
+                                <h6 class="text-muted small">F1-Score</h6>
+                                <h4 class="fw-bold m-0">{{ m.f1_score_pct }}%</h4>
+                            </div>
+                            <div class="col-md-2 border-end">
+                                <h6 class="text-muted small">Precision</h6>
+                                <h4 class="fw-bold m-0">{{ m.precision_pct }}%</h4>
+                            </div>
+                            <div class="col-md-2 border-end">
+                                <h6 class="text-muted small">Recall</h6>
+                                <h4 class="fw-bold m-0">{{ m.recall_pct }}%</h4>
+                            </div>
+                            <div class="col-md-2">
+                                <h6 class="text-muted small">ROC-AUC Index</h6>
+                                <h4 class="fw-bold m-0">{{ m.roc_auc|floatformat:4 }}</h4>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-3 text-muted">
+                    No active ML model has been trained. System is using a static rule-based diagnostics engine.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Health status distribution chart -->
+    <div class="col-lg-6">
+        <div class="custom-card h-100">
+            <h5 class="fw-bold mb-1">Active Status Distribution</h5>
+            <p class="text-muted small mb-4">Ratio of registered smartphone nodes across risk states</p>
+            <div style="height: 240px; position: relative;">
+                <canvas id="statusDistChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Common failure diagnoses chart -->
+    <div class="col-lg-6">
+        <div class="custom-card h-100">
+            <h5 class="fw-bold mb-1">Diagnosed Fault Breakdowns</h5>
+            <p class="text-muted small mb-4">Frequencies of specific component anomalies identified by AI</p>
+            <div style="height: 240px; position: relative;">
+                <canvas id="failuresDistChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Classifiers Comparison Deck -->
+<div class="custom-card">
+    <h5 class="fw-bold mb-3">All Diagnostics Classifiers Performance</h5>
+    <div class="table-responsive">
+        <table class="table table-hover custom-table align-middle">
+            <thead>
+                <tr>
+                    <th>Classifier Node</th>
+                    <th>Accuracy</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1 Score</th>
+                    <th>ROC-AUC Index</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in models %}
+                    <tr>
+                        <td class="fw-semibold">{{ m.name }}</td>
+                        <td>{{ m.accuracy_pct }}%</td>
+                        <td>{{ m.precision_pct }}%</td>
+                        <td>{{ m.recall_pct }}%</td>
+                        <td>{{ m.f1_score_pct }}%</td>
+                        <td>{{ m.roc_auc|floatformat:4 }}</td>
+                        <td>
+                            {% if m.is_active %}
+                                <span class="badge bg-success rounded-pill">Active Classifier</span>
+                            {% else %}
+                                <span class="badge bg-secondary rounded-pill">Trained</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No classification records found. Run training command to populate.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const analyticalData = JSON.parse('{{ chart_data_json|safe }}');
+        
+        // 1. Status distribution polar area / pie chart
+        const statusCtx = document.getElementById('statusDistChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: analyticalData.status_labels,
+                datasets: [{
+                    data: analyticalData.status_counts,
+                    backgroundColor: [
+                        'rgba(22, 163, 74, 0.75)',  // Green
+                        'rgba(202, 138, 4, 0.75)',   // Yellow
+                        'rgba(234, 88, 12, 0.75)',   // Orange
+                        'rgba(225, 29, 72, 0.75)'    // Red
+                    ],
+                    borderColor: ['#16a34a', '#ca8a04', '#ea580c', '#e11d48'],
+                    borderWidth: 1.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                }
+            }
+        });
+
+        // 2. Failures distribution bar chart
+        const failuresCtx = document.getElementById('failuresDistChart').getContext('2d');
+        new Chart(failuresCtx, {
+            type: 'bar',
+            data: {
+                labels: analyticalData.issue_labels,
+                datasets: [{
+                    label: 'Anomaly Count',
+                    data: analyticalData.issue_counts,
+                    backgroundColor: 'rgba(13, 148, 136, 0.75)',
+                    borderColor: '#0d9488',
+                    borderWidth: 1.5,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}Device Details - AI Phone Diagnostics{% endblock %}
+{% block page_title %}{{ device.brand }} {{ device.model }} Logs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold m-0"><i class="bi bi-phone me-2 text-teal"></i>{{ device.name }} Node Logs</h5>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard' %}?device_id={{ device.id }}" class="btn btn-teal btn-sm rounded-2">Diagnostics Dashboard</a>
+        <form method="POST" action="{% url 'device_delete' device.id %}" onsubmit="return confirm('Are you sure you want to delete this device node? All telemetry history will be permanently deleted.')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-sm rounded-2">Delete Device</button>
+        </form>
+    </div>
+</div>
+
+<!-- Tabs for Log Navigation -->
+<ul class="nav nav-tabs border-bottom mb-4" id="logTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold text-dark border-0 border-bottom border-3 border-teal pb-2.5 px-3" id="telemetry-tab" data-bs-toggle="tab" data-bs-target="#telemetry" type="button" role="tab">Telemetry Records</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold text-muted border-0 pb-2.5 px-3" id="repairs-tab" data-bs-toggle="tab" data-bs-target="#repairs" type="button" role="tab">Repairs Log</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold text-muted border-0 pb-2.5 px-3" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button" role="tab">Services worksheets</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold text-muted border-0 pb-2.5 px-3" id="predictions-tab" data-bs-toggle="tab" data-bs-target="#predictions" type="button" role="tab">Prediction History</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="logTabContent">
+    <!-- Telemetry Tab -->
+    <div class="tab-pane fade show active" id="telemetry" role="tabpanel">
+        <div class="custom-card">
+            <h6 class="fw-bold mb-3">Recorded Telemetry Sensor History</h6>
+            <div class="table-responsive">
+                <table class="table table-hover custom-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>CPU Temp</th>
+                            <th>Battery Temp</th>
+                            <th>Battery Health</th>
+                            <th>CPU / RAM usage</th>
+                            <th>Storage</th>
+                            <th>Restarts / Crashes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in health_logs %}
+                            <tr>
+                                <td>{{ r.timestamp|date:"Y-m-d H:i" }}</td>
+                                <td class="fw-semibold">{{ r.cpu_temp|floatformat:1 }} °C</td>
+                                <td class="fw-semibold">{{ r.battery_temp|floatformat:1 }} °C</td>
+                                <td>{{ r.battery_health_pct }}%</td>
+                                <td>{{ r.cpu_usage_pct|floatformat:1 }}% / {{ r.ram_usage_pct|floatformat:1 }}%</td>
+                                <td>{{ r.storage_usage_pct|floatformat:1 }}%</td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ r.unexpected_restarts }} Restarts</span>
+                                    <span class="badge bg-light text-dark">{{ r.app_crashes }} Crashes</span>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">No telemetry records logged yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Repairs Tab -->
+    <div class="tab-pane fade" id="repairs" role="tabpanel">
+        <div class="custom-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold m-0">Device Repair Logs</h6>
+                {% if is_technician_role %}
+                    <a href="{% url 'repair_create' %}?device_id={{ device.id }}" class="btn btn-teal btn-sm rounded-2">Log Repair</a>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover custom-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Repair Type</th>
+                            <th>Parts Replaced</th>
+                            <th>Cost</th>
+                            <th>Technician</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in repairs %}
+                            <tr>
+                                <td>{{ r.date|date:"Y-m-d" }}</td>
+                                <td class="fw-semibold">{{ r.repair_type }}</td>
+                                <td>{{ r.parts_replaced|default:"-" }}</td>
+                                <td>${{ r.cost }}</td>
+                                <td>{{ r.technician.username }}</td>
+                                <td>
+                                    {% if r.status == 'completed' %}
+                                        <span class="badge bg-success rounded-pill">Completed</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark rounded-pill">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No repair records logged for this device node.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Services Tab -->
+    <div class="tab-pane fade" id="services" role="tabpanel">
+        <div class="custom-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold m-0">Technician Service Worksheets</h6>
+                {% if is_technician_role %}
+                    <a href="{% url 'service_create' %}?device_id={{ device.id }}" class="btn btn-teal btn-sm rounded-2">Log Service</a>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover custom-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Service Conducted</th>
+                            <th>Worksheet Notes</th>
+                            <th>Technician</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in services %}
+                            <tr>
+                                <td>{{ s.date|date:"Y-m-d" }}</td>
+                                <td class="fw-semibold">{{ s.service_type }}</td>
+                                <td>{{ s.notes|default:"-" }}</td>
+                                <td>{{ s.technician.username }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No maintenance service records logged.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Predictions Tab -->
+    <div class="tab-pane fade" id="predictions" role="tabpanel">
+        <div class="custom-card">
+            <h6 class="fw-bold mb-3">Historical Failure Prediction Logs</h6>
+            <div class="table-responsive">
+                <table class="table table-hover custom-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Run Time</th>
+                            <th>Health Score</th>
+                            <th>Risk Classification</th>
+                            <th>Failure Probability</th>
+                            <th>Diagnosed Issue</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in predictions %}
+                            <tr>
+                                <td>{{ p.timestamp|date:"Y-m-d H:i" }}</td>
+                                <td class="fw-bold">{{ p.health_score }} / 100</td>
+                                <td>
+                                    <span class="status-pill status-{{ p.risk_level }}">
+                                        {{ p.risk_level|upper }}
+                                    </span>
+                                </td>
+                                <td>{{ p.failure_probability_pct }}%</td>
+                                <td class="fw-semibold text-teal">{{ p.primary_issue }}</td>
+                                <td>{{ p.confidence_pct }}%</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No failure predictions logged for this device node.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Adjust Tab Text Color toggles when switching
+        const tabEl = document.querySelectorAll('#logTab button');
+        tabEl.forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function (event) {
+                // Clear old active tab styling
+                tabEl.forEach(t => {
+                    t.classList.remove('text-dark', 'border-bottom', 'border-3', 'border-teal');
+                    t.classList.add('text-muted');
+                });
+                // Set active styling
+                event.target.classList.remove('text-muted');
+                event.target.classList.add('text-dark', 'border-bottom', 'border-3', 'border-teal');
+            });
+        });
+    });
+</script>
+{% endblock %}

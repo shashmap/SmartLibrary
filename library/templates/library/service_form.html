@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Log Maintenance - AI Diagnostics Hub{% endblock %}
+{% block page_title %}Log Device Service Maintenance{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="custom-card shadow-sm border border-light-subtle">
+            <h5 class="fw-bold mb-1">Device Service Worksheet</h5>
+            <p class="text-muted small mb-4">Log general maintenance actions (cleaning ports, updates, checks) that do not require replacement parts.</p>
+            
+            <form method="POST" action="{% url 'service_create' %}">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Select Phone Node:</label>
+                        {{ form.device }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Assigned Technician:</label>
+                        {{ form.technician }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Service Type Conducted:</label>
+                        {{ form.service_type }}
+                        <div class="form-text small text-muted">e.g. Charging Port cleaning, Firmware update, calibration</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Service Date:</label>
+                        {{ form.date }}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">Service Notes / Remarks:</label>
+                    {{ form.notes }}
+                </div>
+
+                <div class="border-top pt-3 d-flex justify-content-end gap-2">
+                    <a href="{% url 'dashboard' %}" class="btn btn-light rounded-3 px-4">Cancel</a>
+                    <button type="submit" class="btn btn-teal rounded-3 px-4">Save Service Worksheet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

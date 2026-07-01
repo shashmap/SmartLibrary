@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Help Center - AI Phone Failure Prediction{% endblock %}
+{% block page_title %}Help Center & Documentation{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="custom-card mb-4">
+            <h5 class="fw-bold mb-3">Frequently Asked Questions</h5>
+            
+            <div class="accordion accordion-flush" id="helpAccordion">
+                <div class="accordion-item border-bottom">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold px-0 bg-transparent text-dark border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            How does the AI predict hardware breakdowns?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                        <div class="accordion-body px-0 text-muted small py-3" style="line-height: 1.6;">
+                            Android applications cannot directly read microscopic board components like PMIC solder micro-cracks or capacitor degradations. Instead, our system tracks 25 observable telemetry indicators: temperature peaks, voltage sags, discharge rates, unexpected shutdowns, restart histories, and diagnostic failures. When a trained ML classifier (like Random Forest or XGBoost) evaluates this telemetry profile, it maps these symptom combinations to component failure risks based on rules and patterns trained on 500,000+ device logs.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item border-bottom">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold px-0 bg-transparent text-dark border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                            What should I do if my risk classification is High or Critical?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                        <div class="accordion-body px-0 text-muted small py-3" style="line-height: 1.6;">
+                            If the risk level is High or Critical, you should **back up your files immediately** to prevent permanent data loss. Next, review the prescriptive recommendations (e.g. replacing battery, using standard power cables) or contact a service technician to run local hardware diagnostics.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item border-bottom">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold px-0 bg-transparent text-dark border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                            How do I run self-diagnostic checks?
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                        <div class="accordion-body px-0 text-muted small py-3" style="line-height: 1.6;">
+                            Navigate to the <b>Diagnostic Center</b> page, choose your device, and follow the visual instructions. The check uses browser APIs (HTML5 Web Audio for mic/speaker, Canvas for digitizer touch, and DeviceOrientation) to test hardware status. Submitting the form recalibrates your AI health score instantly.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Support card -->
+        <div class="custom-card mb-4">
+            <h5 class="fw-bold mb-3">Need Technical Support?</h5>
+            <p class="small text-muted mb-4">If your device is displaying high failure probabilities, submit a maintenance ticket to our team.</p>
+            <a href="{% url 'contact' %}" class="btn btn-teal w-100 rounded-3">Contact Technician Support</a>
+        </div>
+        
+        <!-- About Project card -->
+        <div class="custom-card">
+            <h5 class="fw-bold mb-3">About the Project</h5>
+            <p class="small text-muted mb-3">This platform is built as an early warning monitoring tool to alert users before sudden board death incidents occur.</p>
+            <a href="{% url 'about' %}" class="text-teal small fw-semibold text-decoration-none">Read architecture documentation</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book Catalogue - SmartLibrary{% endblock %}
+{% block page_title %}Book Catalogue{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-4">
+        <!-- Sidebar Filters -->
+        <div class="col-lg-3">
+            <div class="glass-card p-4 mb-4">
+                <h5 class="fw-bold mb-3 text-white">Categories</h5>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'book_list' %}" class="list-group-item list-group-item-action border-0 px-0 py-2 d-flex justify-content-between align-items-center fw-medium bg-transparent text-secondary {% if not selected_category %}text-white fw-bold{% endif %}" style="border-bottom: 1px solid rgba(255,255,255,0.03) !important;">
+                        <span>All Categories</span>
+                    </a>
+                    {% for cat in categories %}
+                        <a href="{% url 'book_list' %}?category={{ cat.slug }}" class="list-group-item list-group-item-action border-0 px-0 py-2 d-flex justify-content-between align-items-center fw-medium bg-transparent text-secondary {% if selected_category == cat.slug %}text-white fw-bold{% endif %}" style="border-bottom: 1px solid rgba(255,255,255,0.03) !important;">
+                            <span>{{ cat.name }}</span>
+                            <span class="badge bg-secondary bg-opacity-10 border border-secondary border-opacity-25 text-secondary rounded-pill">{{ cat.books.count }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Quick search form for small screens -->
+            <div class="glass-card p-4 d-md-none">
+                <h5 class="fw-bold mb-3 text-white">Refine Search</h5>
+                <form action="{% url 'book_list' %}" method="GET">
+                    <div class="mb-3">
+                        <input type="text" name="q" class="form-control" placeholder="Search title, author..." value="{{ search_query }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-3">Search</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Book Grid -->
+        <div class="col-lg-9">
+            <!-- Search Stats / Sort -->
+            <div class="d-flex justify-content-between align-items-center mb-4 bg-secondary bg-opacity-10 border border-secondary border-opacity-10 p-3 rounded-4">
+                <div class="text-secondary small">
+                    Showing <strong>{{ page_obj.start_index }} - {{ page_obj.end_index }}</strong> of <strong>{{ paginator.count }}</strong> books
+                    {% if search_query %} for "<strong>{{ search_query }}</strong>"{% endif %}
+                </div>
+                {% if user.role == 'admin' %}
+                    <a href="{% url 'book_create' %}" class="btn btn-primary btn-sm rounded-3"><i class="bi bi-plus-lg me-1"></i>Add New Book</a>
+                {% endif %}
+            </div>
+
+            {% if books %}
+                <div class="row g-4">
+                    {% for book in books %}
+                        <div class="col-md-6 col-lg-4 col-xl-3">
+                            <div class="book-card h-100 d-flex flex-column justify-content-between">
+                                <div class="book-cover-container position-relative">
+                                    {% if book.cover_image %}
+                                        <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="book-cover-image">
+                                    {% else %}
+                                        <div class="book-cover-gradient category-{{ book.category.slug }}">
+                                            <i class="bi bi-bookmark-fill book-cover-ribbon"></i>
+                                            <div class="book-cover-title">{{ book.title }}</div>
+                                            <div class="book-cover-author">{{ book.author }}</div>
+                                        </div>
+                                    {% endif %}
+                                    <div class="position-absolute top-0 start-0 m-3">
+                                        {% if book.available_copies > 0 %}
+                                            <span class="badge bg-success shadow-sm">Available</span>
+                                        {% else %}
+                                            <span class="badge bg-danger shadow-sm">Out of Stock</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="p-3 d-flex flex-column justify-content-between" style="height: calc(100% - 250px);">
+                                    <div>
+                                        <small class="text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">{{ book.category.name }}</small>
+                                        <h6 class="fw-bold text-truncate m-0 mt-1" title="{{ book.title }}"><a href="{% url 'book_detail' book.id %}" class="text-decoration-none text-white">{{ book.title }}</a></h6>
+                                        <small class="text-secondary text-truncate d-block" style="font-size: 0.8rem;">by {{ book.author }}</small>
+                                    </div>
+                                    
+                                    <div class="border-top border-secondary border-opacity-25 mt-3 pt-3 d-flex align-items-center justify-content-between">
+                                        <small class="text-secondary" style="font-size: 0.85rem;"><i class="bi bi-geo-alt me-1 text-primary"></i>Copy ({{ book.available_copies }}/{{ book.total_copies }})</small>
+                                        <a href="{% url 'book_detail' book.id %}" class="btn btn-outline-primary btn-sm rounded-3 py-1 px-3">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination navigation links -->
+                {% if is_paginated %}
+                    <nav class="mt-5 d-flex justify-content-center">
+                        <ul class="pagination pagination-rounded gap-1">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link border-0 bg-secondary bg-opacity-10 text-white rounded-3 shadow-none" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active"><a class="page-link border-0 rounded-3 shadow-none fw-bold" href="#" style="background: var(--gradient-accent); color: white;">{{ num }}</a></li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item"><a class="page-link border-0 bg-secondary bg-opacity-10 text-white rounded-3 shadow-none" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search_query %}q={{ search_query }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link border-0 bg-secondary bg-opacity-10 text-white rounded-3 shadow-none" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5 bg-secondary bg-opacity-10 rounded-4 border border-secondary border-opacity-10 mt-4">
+                    <i class="bi bi-search fs-1 text-muted mb-3 d-block"></i>
+                    <h5 class="fw-bold text-white">No books match your criteria</h5>
+                    <p class="text-secondary small">Try resetting your category filters or searching for keywords.</p>
+                    <a href="{% url 'book_list' %}" class="btn btn-primary rounded-3 mt-2">Clear All Filters</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

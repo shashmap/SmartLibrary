@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Register Account - SmartLibrary{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-7">
+        <div class="custom-card p-4 shadow-sm border border-light-subtle">
+            <div class="text-center mb-4">
+                <div class="brand-icon mx-auto mb-3" style="width: 50px; height: 50px; font-size: 1.5rem; background: linear-gradient(135deg, var(--color-primary), var(--color-accent)); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <i class="bi bi-person-plus"></i>
+                </div>
+                <h3 class="fw-bold mb-1">Create Account</h3>
+                <p class="text-muted small">Register to start borrowing books and managing your library account</p>
+            </div>
+            
+            <form method="POST" enctype="multipart/form-data" action="{% url 'register' %}">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger p-2 small">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <h5 class="fw-bold mb-3 border-bottom pb-2 text-secondary">1. General Account Details</h5>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Username</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small">{{ form.username.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Email Address</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small">{{ form.email.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Phone Number</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                            <div class="text-danger small">{{ form.phone.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Library Role</label>
+                        {{ form.role }}
+                        {% if form.role.errors %}
+                            <div class="text-danger small">{{ form.role.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger small">{{ form.password.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Confirm Password</label>
+                        {{ form.confirm_password }}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">Profile Picture (optional)</label>
+                    {{ form.profile_picture }}
+                </div>
+                
+                <!-- Dynamic Profile Forms -->
+                <div id="student-fields" class="profile-section">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2 text-secondary">2. Student Profile Details</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Roll Number</label>
+                            {{ student_form.roll_number }}
+                            {% if student_form.roll_number.errors %}
+                                <div class="text-danger small">{{ student_form.roll_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Department</label>
+                            {{ student_form.department }}
+                            {% if student_form.department.errors %}
+                                <div class="text-danger small">{{ student_form.department.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Membership Expiry Date</label>
+                        {{ student_form.membership_expiry }}
+                        {% if student_form.membership_expiry.errors %}
+                            <div class="text-danger small">{{ student_form.membership_expiry.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div id="faculty-fields" class="profile-section" style="display: none;">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2 text-secondary">2. Faculty Profile Details</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Employee ID</label>
+                            {{ faculty_form.employee_id }}
+                            {% if faculty_form.employee_id.errors %}
+                                <div class="text-danger small">{{ faculty_form.employee_id.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Department</label>
+                            {{ faculty_form.department }}
+                            {% if faculty_form.department.errors %}
+                                <div class="text-danger small">{{ faculty_form.department.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Research Interest (optional)</label>
+                        {{ faculty_form.research_interest }}
+                        {% if faculty_form.research_interest.errors %}
+                            <div class="text-danger small">{{ faculty_form.research_interest.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-teal w-100 rounded-3 py-2.5 mb-3">Register Account</button>
+            </form>
+            
+            <div class="text-center">
+                <span class="small text-muted">Already have an account? <a href="{% url 'login' %}" class="text-teal fw-semibold">Sign In</a></span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const roleSelect = document.querySelector('select[name="role"]');
+        const studentSection = document.getElementById("student-fields");
+        const facultySection = document.getElementById("faculty-fields");
+
+        function toggleSections() {
+            if (roleSelect.value === 'faculty') {
+                studentSection.style.display = 'none';
+                facultySection.style.display = 'block';
+            } else if (roleSelect.value === 'student') {
+                studentSection.style.display = 'block';
+                facultySection.style.display = 'none';
+            } else {
+                studentSection.style.display = 'none';
+                facultySection.style.display = 'none';
+            }
+        }
+
+        if (roleSelect) {
+            roleSelect.addEventListener("change", toggleSections);
+            toggleSections(); // Init state
+        }
+    });
+</script>
+{% endblock %}

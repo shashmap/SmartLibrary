@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit Book{% else %}Add Book{% endif %} - SmartLibrary{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Edit Book Details{% else %}Add New Book{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="card border-0 rounded-4 shadow-sm p-4 mx-auto" style="max-width: 800px;">
+        <h5 class="fw-bold mb-4">{% if form.instance.pk %}Modify Book Metadata{% else %}Enter Book Information{% endif %}</h5>
+        
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label class="form-label fw-semibold text-secondary">Book Title</label>
+                    {{ form.title }}
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary">Author</label>
+                    {{ form.author }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary">ISBN (13 digit)</label>
+                    {{ form.isbn }}
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary">Publisher</label>
+                    {{ form.publisher }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary">Publication Date</label>
+                    {{ form.publication_date }}
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary">Category</label>
+                    {{ form.category }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary">Cover Image</label>
+                    {{ form.cover_image }}
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-secondary">Description</label>
+                {{ form.description }}
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary rounded-3 px-4 border-0" style="background: var(--primary-gradient);">Save Book</button>
+                <a href="{% if form.instance.pk %}{% url 'book_detail' form.instance.pk %}{% else %}{% url 'book_list' %}{% endif %}" class="btn btn-light rounded-3 px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

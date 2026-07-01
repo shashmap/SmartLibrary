@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}My Notifications - SmartLibrary{% endblock %}
+{% block page_title %}Notifications Center{% endblock %}
+
+{% block content %}
+<div class="glass-card">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <h5 class="fw-bold m-0 text-white"><i class="bi bi-bell-fill text-primary me-2"></i>Library Alerts & Notifications</h5>
+        
+        <form method="POST" action="{% url 'notifications_read_all' %}" class="m-0">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary btn-sm rounded-3">Mark All As Read</button>
+        </form>
+    </div>
+    
+    <div class="list-group list-group-flush">
+        {% for n in notifications %}
+            <div class="list-group-item d-flex gap-3 py-3 px-0 {% if not n.is_read %}unread-item{% endif %}" style="border-bottom: 1px solid var(--border-color) !important; background: transparent;">
+                <div class="fs-4 p-1">
+                    {% if n.notification_type == 'warning' or n.notification_type == 'fine' %}
+                        <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                    {% elif n.notification_type == 'recommendation' %}
+                        <i class="bi bi-stars text-warning"></i>
+                    {% else %}
+                        <i class="bi bi-info-circle-fill text-primary"></i>
+                    {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold m-0 text-white {% if not n.is_read %}fw-extrabold text-primary{% endif %}">{{ n.title }}</h6>
+                        <small class="text-secondary">{{ n.created_at|timesince }} ago</small>
+                    </div>
+                    <p class="text-secondary small mb-0">{{ n.message }}</p>
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-bell-slash fs-1 mb-2 d-block text-muted"></i>
+                <span>No notifications logged yet.</span>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

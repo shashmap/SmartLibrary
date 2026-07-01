@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block title %}AI Predictor Simulator - Phone Hardware Diagnostics{% endblock %}
+{% block page_title %}AI Failure Prediction Simulator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6">
+        <div class="custom-card mb-4">
+            <h5 class="fw-bold mb-1">Telemetry Simulator Deck</h5>
+            <p class="text-muted small mb-4">Adjust slider parameters to simulate different phone states and check failure probabilities.</p>
+            
+            <form method="POST" action="{% url 'prediction' %}">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Device Age (months)</label>
+                        {{ form.device_age }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Charging Cycles</label>
+                        {{ form.charging_cycles }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Battery Health (%)</label>
+                        {{ form.battery_health }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Battery Discharge Rate (%/hr)</label>
+                        {{ form.battery_drain_rate }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">CPU Temp (°C)</label>
+                        {{ form.cpu_temperature }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Battery Temp (°C)</label>
+                        {{ form.battery_temperature }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Charging Speed (W)</label>
+                        {{ form.charging_speed }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Charging Duration (mins)</label>
+                        {{ form.charging_duration }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Unexpected Shutdowns / mo</label>
+                        {{ form.unexpected_shutdowns }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Unexpected Restarts / mo</label>
+                        {{ form.restart_frequency }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">CPU Usage (%)</label>
+                        {{ form.cpu_usage }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">RAM Usage (%)</label>
+                        {{ form.ram_usage }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">Storage Usage (%)</label>
+                        {{ form.storage_usage }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">Wi-Fi Quality</label>
+                        {{ form.wifi_stability }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">Bluetooth Quality</label>
+                        {{ form.bluetooth_stability }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">Cellular Quality</label>
+                        {{ form.network_stability }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Physical Drops Count</label>
+                        {{ form.physical_drop_history }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold">Liquid Spills Damage</label>
+                        {{ form.liquid_damage_history }}
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">Touch Test</label>
+                        {{ form.touch_failure }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">Microphone</label>
+                        {{ form.microphone_failure }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">Speaker</label>
+                        {{ form.speaker_failure }}
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">Charging Port</label>
+                        {{ form.charging_failure }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">Camera Hub</label>
+                        {{ form.camera_failure }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label small fw-bold">Sensor Hub</label>
+                        {{ form.sensor_failure }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Previous Repairs Count</label>
+                    {{ form.repair_history }}
+                </div>
+
+                <button type="submit" class="btn btn-teal w-100 rounded-3 py-2"><i class="bi bi-robot me-2"></i>Evaluate Telemetry Vector</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="col-lg-6">
+        <div class="custom-card h-100 d-flex flex-column justify-content-between">
+            <div>
+                <h5 class="fw-bold mb-1">Prediction Output Dashboard</h5>
+                <p class="text-muted small mb-4">Outcome computed from active classifier / fallback rules</p>
+                
+                {% if results %}
+                    <div class="row align-items-center mb-4">
+                        <div class="col-6 text-center border-end">
+                            <h1 class="display-3 fw-bold text-teal mb-0">{{ results.health_score }}</h1>
+                            <small class="text-muted fw-semibold">OVERALL HEALTH</small>
+                        </div>
+                        <div class="col-6 text-center">
+                            <h2 class="fw-bold mb-1 {% if results.risk_level == 'Critical' or results.risk_level == 'High' %}text-danger{% else %}text-success{% endif %}">{{ results.risk_level }}</h2>
+                            <small class="text-muted fw-semibold">RISK LEVEL STATE</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold border-bottom pb-2">Diagnosed Telemetry Parameters</h6>
+                        <div class="row g-2 small">
+                            <div class="col-6 d-flex justify-content-between">
+                                <span class="text-muted">Failure Chance:</span>
+                                <span class="fw-bold">{{ results.failure_prob }}</span>
+                            </div>
+                            <div class="col-6 d-flex justify-content-between">
+                                <span class="text-muted">AI Confidence:</span>
+                                <span class="fw-semibold">{{ results.confidence }}</span>
+                            </div>
+                            <div class="col-12 d-flex justify-content-between">
+                                <span class="text-muted">Diagnosed Issue:</span>
+                                <span class="fw-bold text-teal">{{ results.primary_issue }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold border-bottom pb-2">Hardware Node Failure Probabilities</h6>
+                        <div class="space-y-2">
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Battery Risk Index</span>
+                                    <span class="fw-semibold">{{ results.battery_risk }}</span>
+                                </div>
+                                <div class="progress rounded-pill bg-light" style="height: 6px;">
+                                    <div class="progress-bar progress-teal" style="width: {{ results.battery_risk }}"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>PMIC (Power Control)</span>
+                                    <span class="fw-semibold">{{ results.pmic_risk }}</span>
+                                </div>
+                                <div class="progress rounded-pill bg-light" style="height: 6px;">
+                                    <div class="progress-bar progress-teal" style="width: {{ results.pmic_risk }}"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Motherboard Solder Joints</span>
+                                    <span class="fw-semibold">{{ results.motherboard_risk }}</span>
+                                </div>
+                                <div class="progress rounded-pill bg-light" style="height: 6px;">
+                                    <div class="progress-bar progress-teal" style="width: {{ results.motherboard_risk }}"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Charging IC & Input Socket</span>
+                                    <span class="fw-semibold">{{ results.charging_ic_risk }}</span>
+                                </div>
+                                <div class="progress rounded-pill bg-light" style="height: 6px;">
+                                    <div class="progress-bar progress-teal" style="width: {{ results.charging_ic_risk }}"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Display Digitizer Array</span>
+                                    <span class="fw-semibold">{{ results.display_risk }}</span>
+                                </div>
+                                <div class="progress rounded-pill bg-light" style="height: 6px;">
+                                    <div class="progress-bar progress-teal" style="width: {{ results.display_risk }}"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Flash Storage Sectors</span>
+                                    <span class="fw-semibold">{{ results.storage_risk }}</span>
+                                </div>
+                                <div class="progress rounded-pill bg-light" style="height: 6px;">
+                                    <div class="progress-bar progress-teal" style="width: {{ results.storage_risk }}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h6 class="fw-bold border-bottom pb-2">AI Prescriptive Advice</h6>
+                        <ul class="small ps-3 text-muted mb-0">
+                            {% for rec in results.recommendations %}
+                                <li class="mb-1">{{ rec }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5 my-5 text-muted">
+                        <i class="bi bi-robot fs-1 mb-2 d-block"></i>
+                        <span>Adjust telemetry parameters and run evaluation to see prediction outputs.</span>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="border-top pt-3 text-muted small mt-4 text-center">
+                Prediction classification is fully simulated locally.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
