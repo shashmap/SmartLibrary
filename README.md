@@ -196,3 +196,31 @@ Generate reports for:
 # 7. Conclusion
 
 SmartLibrary is more than a traditional Library Management System. It combines automation, intelligent notifications, QR-based book management, analytics, reservations, and reporting into a single platform. By solving the common problem of missed return reminders while simplifying daily library operations, SmartLibrary provides a smarter and more efficient experience for both librarians and library users.
+
+---
+
+## 8. Setup & Running Instructions
+
+To run the project on another machine:
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/shashmap/SmartLibrary.git
+   cd SmartLibrary
+   ```
+
+2. **Install dependencies**:
+   Make sure you have Python (version 3.10+) installed. Run:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run the server**:
+   Since the pre-seeded SQLite database (`db.sqlite3`) is already included in the repository, you do not need to run migrations or seed data. Simply start the local server:
+   ```bash
+   python manage.py runserver
+   ```
+   Open your browser and navigate to `http://127.0.0.1:8000/`.
+
+4. **Downloading Reports**:
+   Log in using the administrator account (`admin` / `admin`). Navigate to the **Reports Center** from the sidebar and click **Download PDF** on any of the reports. The system will compile the latest 200 logs and download the PDF report instantly.
